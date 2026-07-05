@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FREQUENCIES } from '../utils/maskingSimulator';
 
 export default function StudentAudiogram({ thresholds }) {
+  const [isOpen, setIsOpen] = useState(false);
   // thresholds is an object matching the true patient structure:
   // { right: { ac: {}, bc: {} }, left: { ac: {}, bc: {} } }
   
@@ -15,13 +16,27 @@ export default function StudentAudiogram({ thresholds }) {
   };
 
   return (
-    <div className="bg-card text-card-foreground p-6 rounded-xl border border-green-500/30 shadow-sm space-y-4">
-      <h3 className="font-bold text-lg m-0 text-green-600">Saved Masked Thresholds</h3>
-      <p className="text-sm text-muted-foreground">
-        Use the "Save Masked Threshold" button while presenting tones to record your masked results here. (M = Masked)
-      </p>
+    <div className="bg-card text-card-foreground rounded-xl border border-green-500/30 shadow-sm overflow-hidden">
+      <div 
+        className="p-6 cursor-pointer hover:bg-green-500/5 transition-colors flex justify-between items-center"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div>
+          <h3 className="font-bold text-lg m-0 text-green-600">Saved Masked Thresholds</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Use the "Save Masked Threshold" button while presenting tones to record your masked results here. (M = Masked)
+          </p>
+        </div>
+        <div className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+      </div>
 
-      <div className="overflow-x-auto">
+      {isOpen && (
+        <div className="p-6 pt-0 space-y-4">
+          <div className="overflow-x-auto">
         <table className="w-full text-center text-sm">
           <thead className="bg-green-500/10 text-muted-foreground uppercase text-xs">
             <tr>
@@ -64,6 +79,8 @@ export default function StudentAudiogram({ thresholds }) {
           <p className="font-semibold text-sm">{thresholds.left.wrs ? `${thresholds.left.wrs.score}% @ ${thresholds.left.wrs.presentationLevel} dB HL (${thresholds.left.wrs.maskingLevel !== null ? `${thresholds.left.wrs.maskingLevel} dB EM Masking` : 'Unmasked'})` : '-'}</p>
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 }

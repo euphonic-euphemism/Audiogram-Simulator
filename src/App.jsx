@@ -15,7 +15,9 @@ import {
   getIA, 
   checkThresholdResponse, 
   checkWrsResponse,
-  calculateUnmaskedAudiogram
+  calculateUnmaskedAudiogram,
+  evaluateMaskingNeeds,
+  FREQUENCIES
 } from './utils/maskingSimulator';
 
 function App() {
@@ -46,6 +48,7 @@ function App() {
   const [toneQuizPassed, setToneQuizPassed] = useState(false);
   const [speechQuizPassed, setSpeechQuizPassed] = useState(false);
   const [lockedTransducer, setLockedTransducer] = useState(null);
+  const [saveFeedback, setSaveFeedback] = useState(null);
 
   // Student saved thresholds
   const emptyStudentThresholds = () => ({
@@ -60,6 +63,34 @@ function App() {
   // Compute Unmasked Audiogram Once per patient/transducer change to prevent non-deterministic renders
   const effectiveAcTransducer = lockedTransducer || baseAcTransducer;
   const unmaskedAudiogram = useMemo(() => calculateUnmaskedAudiogram(patient, effectiveAcTransducer), [patient, effectiveAcTransducer]);
+  
+  const trueMaskingNeeds = useMemo(() => evaluateMaskingNeeds(unmaskedAudiogram, effectiveAcTransducer), [unmaskedAudiogram, effectiveAcTransducer]);
+
+  const checkAllMaskingCompleted = () => {
+    for (const freq of FREQUENCIES) {
+      // Check Right AC
+      if (trueMaskingNeeds.ac.right[freq]) {
+        const studentAcR = studentThresholds.right.ac[freq];
+        if (!studentAcR || !studentAcR.isMasked) return false;
+      }
+      // Check Left AC
+      if (trueMaskingNeeds.ac.left[freq]) {
+        const studentAcL = studentThresholds.left.ac[freq];
+        if (!studentAcL || !studentAcL.isMasked) return false;
+      }
+      // Check Right BC
+      if (trueMaskingNeeds.bc.right[freq]) {
+        const studentBcR = studentThresholds.right.bc[freq];
+        if (!studentBcR || !studentBcR.isMasked) return false;
+      }
+      // Check Left BC
+      if (trueMaskingNeeds.bc.left[freq]) {
+        const studentBcL = studentThresholds.left.bc[freq];
+        if (!studentBcL || !studentBcL.isMasked) return false;
+      }
+    }
+    return true;
+  };
 
   const handleNewPatient = () => {
     setPatient(generateRandomPatient());
@@ -70,6 +101,7 @@ function App() {
     setToneQuizPassed(false);
     setSpeechQuizPassed(false);
     setLockedTransducer(null);
+    setSaveFeedback(null);
     const newTransducer = getRandomTransducer();
     setTransducer(newTransducer);
     setBaseAcTransducer(newTransducer);
@@ -84,6 +116,42 @@ function App() {
   };
 
   const handleSaveThreshold = (isMasked = false) => {
+    // Validation Logic
+    let isCorrect = true;
+    let feedbackMsg = '';
+    
+    if (testMode === 'TONE') {
+      const typeKey = transducer === 'BONE' ? 'bc' : 'ac';
+      const trueNeedsMasking = trueMaskingNeeds[typeKey][testEar][frequency];
+      
+      const trueThreshold = patient[testEar][typeKey][frequency];
+      
+      if (isMasked && !trueNeedsMasking) {
+        isCorrect = false;
+        feedbackMsg = `Unnecessary Masking: Masking is not required for ${testEar} ${typeKey.toUpperCase()} at ${frequency} Hz.`;
+      } else if (isMasked && toneLevel !== trueThreshold) {
+        isCorrect = false;
+        feedbackMsg = `Incorrect Threshold: You saved ${toneLevel} dB HL, but the true threshold is different. Check your masking plateau.`;
+      } else if (isMasked && trueNeedsMasking && toneLevel === trueThreshold) {
+        feedbackMsg = `Correct! True masked threshold found at ${toneLevel} dB HL.`;
+      } else if (!isMasked && toneLevel === trueThreshold) {
+        // Just in case they save unmasked for some reason
+        feedbackMsg = `Threshold saved.`;
+      }
+    } else {
+      feedbackMsg = `${testMode} Saved`; // Provide generic feedback for SRT/WRS
+    }
+
+    setSaveFeedback({ type: isCorrect ? 'success' : 'error', message: feedbackMsg });
+    
+    // Clear feedback after 4 seconds
+    setTimeout(() => setSaveFeedback(null), 4000);
+
+    // Only save if it's correct (or if it's speech testing where validation isn't strict yet)
+    if (!isCorrect && testMode === 'TONE') {
+      return; 
+    }
+
     setStudentThresholds(prev => {
       const next = { ...prev };
       // Deep copy the ear we are changing
@@ -290,27 +358,23 @@ function App() {
                   onSaveThreshold={handleSaveThreshold}
                   showFormulas={toneQuizPassed && speechQuizPassed}
                   lockedTransducer={lockedTransducer}
+                  saveFeedback={saveFeedback}
                 />
                 
-                <div className="mt-8">
-                  <PatientResponse 
-                    hasResponded={hasResponded} 
-                    responseValue={responseValue}
-                    testMode={testMode} 
-                  />
-                </div>
-
-                <div className="mt-8">
-                  <MaskingProfileGraph 
-                    history={history}
-                    frequency={frequency}
-                    testEar={testEar}
-                    transducer={transducer}
-                    testMode={testMode}
-                  />
-                </div>
               </div>
             </div>
+            
+            {toneQuizPassed && (
+              <MaskingAnswerKey 
+                patient={patient} 
+                transducer={effectiveAcTransducer} 
+                unmaskedAudiogram={unmaskedAudiogram} 
+                studentThresholds={studentThresholds}
+                speechQuizPassed={speechQuizPassed}
+              />
+            )}
+            
+            <PatientAudiogram patient={patient} />
           </div>
 
           <div className="space-y-8">
@@ -337,7 +401,7 @@ function App() {
               onClear={clearHistory}
             />
 
-            {toneQuizPassed && !speechQuizPassed && (
+            {toneQuizPassed && !speechQuizPassed && checkAllMaskingCompleted() && (
               <SpeechMaskingQuiz 
                 patient={patient} 
                 transducer={effectiveAcTransducer} 
@@ -354,17 +418,19 @@ function App() {
               </div>
             )}
             
-            <PatientAudiogram patient={patient} />
+            <PatientResponse 
+              hasResponded={hasResponded} 
+              responseValue={responseValue}
+              testMode={testMode} 
+            />
             
-            {toneQuizPassed && (
-              <MaskingAnswerKey 
-                patient={patient} 
-                transducer={effectiveAcTransducer} 
-                unmaskedAudiogram={unmaskedAudiogram} 
-                studentThresholds={studentThresholds}
-                speechQuizPassed={speechQuizPassed}
-              />
-            )}
+            <MaskingProfileGraph 
+              history={history}
+              frequency={frequency}
+              testEar={testEar}
+              transducer={transducer}
+              testMode={testMode}
+            />
           </div>
         </main>
       </div>

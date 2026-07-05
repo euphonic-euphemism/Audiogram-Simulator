@@ -10,7 +10,7 @@ export default function MaskingWorksheet({ history, onClear }) {
         <h2 className="text-xl font-bold">Masking History</h2>
         <button 
           onClick={onClear}
-          className="px-3 py-1 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded text-sm font-medium transition-colors"
+          className="px-3 py-1 bg-green-600 text-white hover:bg-green-700 rounded text-sm font-medium transition-colors shadow-sm"
         >
           Clear History
         </button>
