@@ -1,7 +1,7 @@
 {
   "name": "masking-worksheet",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.3",
   "description": "Clinical Masking Simulator Desktop App",
   "author": {
     "name": "Author",
@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"cross-env NODE_ENV=development vite\" \"wait-on tcp:5173 && electron .\"",
-    "electron:build": "vite build && electron-builder"
+    "electron:build": "vite build && electron-builder -p always"
   },
   "build": {
     "appId": "com.audiology.maskingsimulator",
