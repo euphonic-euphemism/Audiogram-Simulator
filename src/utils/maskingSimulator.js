@@ -319,13 +319,28 @@ export function getIA(transducer, patient, mode, freq = 1000) {
  */
 export function checkThresholdResponse({
   teTrueThreshold,
+  teBestBc,
   nteBestBc,
   tePresentationLevel,
   nteMaskingLevel,
-  ia
+  ia,
+  maskingIA
 }) {
+  const mIA = maskingIA !== undefined ? maskingIA : (ia === 0 ? 40 : ia);
+  const teBc = teBestBc !== undefined ? teBestBc : teTrueThreshold;
+
+  let effectiveTeThreshold = teTrueThreshold;
+  if (nteMaskingLevel > 0) {
+    const crossoverMaskingToTe = nteMaskingLevel - mIA;
+    if (crossoverMaskingToTe >= teBc) {
+      if (crossoverMaskingToTe > effectiveTeThreshold) {
+         effectiveTeThreshold = crossoverMaskingToTe;
+      }
+    }
+  }
+
   // Can they hear it in the Test Ear?
-  const hearsInTE = tePresentationLevel >= teTrueThreshold;
+  const hearsInTE = tePresentationLevel >= effectiveTeThreshold;
 
   // Crossover reaches the NTE cochlea
   const crossoverLevel = tePresentationLevel - ia;
@@ -344,12 +359,25 @@ export function checkThresholdResponse({
 export function checkWrsResponse({
   teSrt,
   teMaxWrs,
-  nteSrt, // For speech crossover, we often compare to NTE best BC or NTE SRT depending on the exact clinical rules, let's use NTE SRT for speech crossover detection threshold for simplicity, or NTE best BC for pure sensory response.
+  nteSrt,
   nteBestBc, 
   tePresentationLevel,
   nteMaskingLevel,
-  ia
+  ia,
+  maskingIA
 }) {
+  const mIA = maskingIA !== undefined ? maskingIA : ia;
+
+  let effectiveTeSrt = teSrt;
+  if (nteMaskingLevel > 0) {
+    const crossoverMaskingToTe = nteMaskingLevel - mIA;
+    if (crossoverMaskingToTe >= teSrt) { // approximating TE cochlea for speech as TE SRT
+      if (crossoverMaskingToTe > effectiveTeSrt) {
+        effectiveTeSrt = crossoverMaskingToTe;
+      }
+    }
+  }
+
   // A sigmoidal (logistic) model for WRS based on presentation level above SRT
   const calculateScore = (presentationLevel, srt, maxWrs) => {
     const sensationLevel = presentationLevel - srt;
@@ -364,7 +392,7 @@ export function checkWrsResponse({
   };
 
   // Test Ear Contribution
-  const teScore = calculateScore(tePresentationLevel, teSrt, teMaxWrs);
+  const teScore = calculateScore(tePresentationLevel, effectiveTeSrt, teMaxWrs);
 
   // Non-Test Ear Contribution (Crossover)
   // Masking reduces the effective crossover level

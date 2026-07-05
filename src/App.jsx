@@ -97,16 +97,23 @@ function App() {
       if (testMode === 'TONE') {
         // Pure Tone Logic
         const isRight = testEar === 'right';
-        const teTrueThreshold = isRight ? patient.right.ac[frequency] : patient.left.ac[frequency];
+        const teTrueThreshold = transducer === 'BONE' ? 
+          (isRight ? patient.right.bc[frequency] : patient.left.bc[frequency]) : 
+          (isRight ? patient.right.ac[frequency] : patient.left.ac[frequency]);
+        const teBestBc = isRight ? patient.right.bc[frequency] : patient.left.bc[frequency];
         // Cross hearing goes to the best bone conduction of the NTE
         const nteBestBc = isRight ? patient.left.bc[frequency] : patient.right.bc[frequency];
         
+        const maskingIA = getIA(baseAcTransducer, patient, testMode, frequency);
+
         responded = checkThresholdResponse({
           teTrueThreshold,
+          teBestBc,
           nteBestBc,
           tePresentationLevel: toneLevel,
           nteMaskingLevel: maskingLevel,
-          ia
+          ia,
+          maskingIA
         });
       } else if (testMode === 'SRT') {
         // SRT Logic (similar to tone but using SRT values)
@@ -115,12 +122,16 @@ function App() {
         // For crossover, we approximate by comparing to NTE SRT as the crossover threshold
         const nteSrt = isRight ? patient.left.srt : patient.right.srt;
         
+        const maskingIA = getIA(baseAcTransducer, patient, testMode, frequency);
+        
         responded = checkThresholdResponse({
           teTrueThreshold: teSrt,
+          teBestBc: teSrt,
           nteBestBc: nteSrt, 
           tePresentationLevel: toneLevel,
           nteMaskingLevel: maskingLevel,
-          ia
+          ia,
+          maskingIA
         });
       } else if (testMode === 'WRS') {
         // WRS Logic
@@ -129,6 +140,8 @@ function App() {
         const teMaxWrs = isRight ? patient.right.maxWrs : patient.left.maxWrs;
         const nteSrt = isRight ? patient.left.srt : patient.right.srt;
 
+        const maskingIA = getIA(baseAcTransducer, patient, testMode, frequency);
+
         score = checkWrsResponse({
           teSrt,
           teMaxWrs,
@@ -136,7 +149,8 @@ function App() {
           nteBestBc: nteSrt, // Approximation for speech crossover
           tePresentationLevel: toneLevel,
           nteMaskingLevel: maskingLevel,
-          ia
+          ia,
+          maskingIA
         });
         responded = true; // For WRS, patient always "responds" with a score
       }
