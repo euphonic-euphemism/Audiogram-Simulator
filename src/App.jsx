@@ -198,6 +198,7 @@ function App() {
               transducer={transducer} 
               studentThresholds={studentThresholds}
               unmaskedAudiogram={unmaskedAudiogram} 
+              quizCompleted={toneQuizPassed && speechQuizPassed}
             />
 
             <AudiometerControl 

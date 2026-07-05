@@ -1,5 +1,5 @@
 import React from 'react';
-import { FREQUENCIES, calculateUnmaskedAudiogram } from '../utils/maskingSimulator';
+import { FREQUENCIES, evaluateMaskingNeeds } from '../utils/maskingSimulator';
 
 const MARGIN = { top: 60, right: 40, bottom: 40, left: 50 };
 const WIDTH = 600;
@@ -59,8 +59,26 @@ const SymbolLeftBcMasked = ({ cx, cy, opacity=1 }) => (
   <path d={`M${cx+4},${cy-6} L${cx+10},${cy-6} L${cx+10},${cy+6} L${cx+4},${cy+6}`} stroke="blue" strokeWidth={2} fill="none" opacity={opacity} />
 );
 
-export default function AudiogramGraph({ patient, transducer, studentThresholds }) {
-  const unmasked = calculateUnmaskedAudiogram(patient, transducer);
+export default function AudiogramGraph({ patient, transducer, studentThresholds, unmaskedAudiogram: unmasked, quizCompleted }) {
+
+  const needsMasking = evaluateMaskingNeeds(unmasked, transducer);
+
+  const getPta = (ear) => {
+    const freqs = [500, 1000, 2000];
+    let sum = 0;
+    for (let f of freqs) {
+      const studentVal = studentThresholds[ear].ac[f];
+      if (studentVal !== undefined && studentVal !== null) {
+        sum += typeof studentVal === 'object' ? studentVal.level : studentVal;
+      } else {
+        sum += unmasked[ear].ac[f];
+      }
+    }
+    return Math.round(sum / 3);
+  };
+
+  const rightPta = getPta('right');
+  const leftPta = getPta('left');
 
   // Generates array of points for connecting lines
   const getLinePoints = (ear, type, dataSource, isStudent=false) => {
@@ -126,7 +144,21 @@ export default function AudiogramGraph({ patient, transducer, studentThresholds 
       
       const x = getX(f);
       const y = getY(val);
-      const opacity = 0.25;
+      let opacity = 0.25;
+      
+      if (quizCompleted) {
+        const studentData = studentThresholds[ear][type][f];
+        const hasMaskedThreshold = studentData && typeof studentData === 'object' && studentData.isMasked;
+        
+        if (hasMaskedThreshold) {
+          return null; // hide unmasked symbol
+        }
+        
+        const needsIt = needsMasking[type][ear][f];
+        if (!needsIt) {
+          opacity = 1.0; // "darken" (make fully opaque) if it doesn't need masking
+        }
+      }
 
       if (ear === 'right' && type === 'ac') return <SymbolRightAcUnmasked key={`u-${ear}-${type}-${f}`} cx={x} cy={y} opacity={opacity} />;
       if (ear === 'left' && type === 'ac') return <SymbolLeftAcUnmasked key={`u-${ear}-${type}-${f}`} cx={x} cy={y} opacity={opacity} />;
@@ -180,6 +212,21 @@ export default function AudiogramGraph({ patient, transducer, studentThresholds 
     <div className="bg-white p-4 rounded-xl border border-secondary shadow-sm w-full flex flex-col items-center">
       <h3 className="font-bold text-lg mb-2">Visual Audiogram</h3>
       
+      <div className="flex justify-between w-full max-w-lg mb-2 px-4 text-sm">
+        <div className="flex flex-col gap-1">
+          <div className="text-red-600 font-bold bg-red-500/10 px-3 py-1 rounded-md border border-red-500/20 shadow-sm text-center">Right PTA: {rightPta} dB HL</div>
+          <div className="text-red-600 font-bold bg-red-500/10 px-3 py-1 rounded-md border border-red-500/20 shadow-sm text-center">
+            Right SRT: {studentThresholds.right.srt !== null ? `${studentThresholds.right.srt.level} dB HL${studentThresholds.right.srt.isMasked ? ' (M)' : ''}` : `${unmasked.right.srt} dB HL`}
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <div className="text-blue-600 font-bold bg-blue-500/10 px-3 py-1 rounded-md border border-blue-500/20 shadow-sm text-center">Left PTA: {leftPta} dB HL</div>
+          <div className="text-blue-600 font-bold bg-blue-500/10 px-3 py-1 rounded-md border border-blue-500/20 shadow-sm text-center">
+            Left SRT: {studentThresholds.left.srt !== null ? `${studentThresholds.left.srt.level} dB HL${studentThresholds.left.srt.isMasked ? ' (M)' : ''}` : `${unmasked.left.srt} dB HL`}
+          </div>
+        </div>
+      </div>
+
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full max-w-lg font-sans">
         {/* Grid and Labels */}
         {renderGrid()}
