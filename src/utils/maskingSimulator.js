@@ -58,12 +58,43 @@ function generateEarConfiguration() {
   const bc = {};
   FREQUENCIES.forEach(f => {
     if (f === 8000) return; // BC is not tested at 8000 Hz
-    let gap = 0;
-    if (abgProfile === 'CONDUCTIVE') gap = rand5(15, 45);
-    else if (abgProfile === 'MIXED') gap = rand5(10, 30);
-    else gap = rand5(0, 5); 
-
-    bc[f] = Math.max(0, ac[f] - gap);
+    
+    if (abgProfile === 'SNHL') {
+      // SNHL: ABG <= 10. BC is close to AC.
+      let gap = rand5(0, 10);
+      bc[f] = Math.max(0, ac[f] - gap);
+    } else if (abgProfile === 'CONDUCTIVE') {
+      // Conductive: BC must be normal (<= 25), and ABG >= 15.
+      if (ac[f] < 15) {
+        // Normal hearing at this freq, no room for ABG
+        let gap = rand5(0, 5);
+        bc[f] = Math.max(0, ac[f] - gap);
+      } else {
+        let maxBc = Math.min(25, ac[f] - 15);
+        if (maxBc < 0) maxBc = 0;
+        // The max ABG is typically ~60 dB. So BC should be at least ac[f] - 60.
+        let minBc = Math.max(0, ac[f] - 60);
+        if (minBc > maxBc) minBc = maxBc;
+        bc[f] = rand5(minBc, maxBc);
+      }
+    } else if (abgProfile === 'MIXED') {
+      // Mixed: BC > 25 AND ABG >= 15
+      if (ac[f] < 45) {
+        // Can't really be mixed if AC < 45 (needs BC >= 30 and ABG >= 15).
+        // Fallback to Conductive or Normal depending on AC.
+        if (ac[f] >= 15) {
+           let maxBc = Math.min(25, ac[f] - 15);
+           bc[f] = rand5(0, maxBc);
+        } else {
+           bc[f] = ac[f];
+        }
+      } else {
+        let minBc = Math.max(30, ac[f] - 60); // Max ABG is 60
+        let maxBc = ac[f] - 15; // Min ABG is 15
+        if (maxBc < minBc) maxBc = minBc;
+        bc[f] = rand5(minBc, maxBc);
+      }
+    }
   });
 
   return { ac, bc };
