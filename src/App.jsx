@@ -270,6 +270,7 @@ function App() {
                   setTestEar={setTestEar}
                   onSaveThreshold={handleSaveThreshold}
                   showFormulas={toneQuizPassed && speechQuizPassed}
+                  lockedTransducer={lockedTransducer}
                 />
                 
                 <div className="mt-8">
@@ -336,12 +337,13 @@ function App() {
             
             <PatientAudiogram patient={patient} />
             
-            {(toneQuizPassed && speechQuizPassed) && (
+            {toneQuizPassed && (
               <MaskingAnswerKey 
                 patient={patient} 
                 transducer={effectiveAcTransducer} 
                 unmaskedAudiogram={unmaskedAudiogram} 
                 studentThresholds={studentThresholds}
+                speechQuizPassed={speechQuizPassed}
               />
             )}
           </div>

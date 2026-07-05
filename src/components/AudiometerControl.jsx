@@ -17,7 +17,8 @@ export default function AudiometerControl({
   testEar,
   setTestEar,
   onSaveThreshold,
-  showFormulas
+  showFormulas,
+  lockedTransducer
 }) {
   const handleToneChange = (amount) => {
     setToneLevel((prev) => Math.min(120, Math.max(-10, prev + amount)));
@@ -80,9 +81,10 @@ export default function AudiometerControl({
             {Object.keys(TRANSDUCERS).map((key) => {
               // Bone conduction usually isn't used for speech in standard basic simulators, 
               // but we allow it for TONE. Hide for speech if you want, or just leave it.
+              const isLockedAc = lockedTransducer && key !== 'BONE' && key !== lockedTransducer;
               return (
-                <option key={key} value={key}>
-                  {TRANSDUCERS[key].name} (IA: {TRANSDUCERS[key].defaultIA === 0 ? '0' : 'Var'})
+                <option key={key} value={key} disabled={isLockedAc}>
+                  {TRANSDUCERS[key].name} (IA: {TRANSDUCERS[key].defaultIA === 0 ? '0' : 'Var'}) {isLockedAc ? '(Locked)' : ''}
                 </option>
               )
             })}

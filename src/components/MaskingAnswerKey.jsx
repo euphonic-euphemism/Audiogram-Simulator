@@ -1,7 +1,7 @@
 import React from 'react';
 import { FREQUENCIES, evaluateMaskingNeeds, evaluateSpeechMaskingNeeds, getWrsPresentationLevel } from '../utils/maskingSimulator';
 
-export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogram, studentThresholds }) {
+export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogram, studentThresholds, speechQuizPassed }) {
   const maskingNeeds = evaluateMaskingNeeds(unmaskedAudiogram, transducer);
   const speechMaskingNeeds = evaluateSpeechMaskingNeeds(patient, transducer, unmaskedAudiogram, studentThresholds);
 
@@ -65,10 +65,10 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
           return null;
         })}
         
-        {speechMaskingNeeds.srt.right && <li><strong>SRT IML:</strong> Right Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
-        {speechMaskingNeeds.srt.left && <li><strong>SRT IML:</strong> Left Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
-        {speechMaskingNeeds.wrs.right && <li><strong>WRS IML:</strong> Right Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
-        {speechMaskingNeeds.wrs.left && <li><strong>WRS IML:</strong> Left Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechQuizPassed && speechMaskingNeeds.srt.right && <li><strong>SRT IML:</strong> Right Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechQuizPassed && speechMaskingNeeds.srt.left && <li><strong>SRT IML:</strong> Left Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechQuizPassed && speechMaskingNeeds.wrs.right && <li><strong>WRS IML:</strong> Right Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechQuizPassed && speechMaskingNeeds.wrs.left && <li><strong>WRS IML:</strong> Left Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
         
         {!anyMaskingNeeded && (
           <li>No masking required for any test.</li>
