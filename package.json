@@ -28,7 +28,8 @@
     ],
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.education"
+      "category": "public.app-category.education",
+      "identity": null
     },
     "win": {
       "target": "nsis",
