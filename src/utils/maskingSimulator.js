@@ -246,17 +246,24 @@ export function calculateUnmaskedAudiogram(patient, transducer = 'HEADPHONES') {
 export function getWrsPresentationLevel(data, ear) {
   const srt = data[ear].srt;
   const ac2000 = data[ear].ac[2000];
+  const bc2000 = data[ear].bc[2000] !== undefined ? data[ear].bc[2000] : ac2000;
+  
+  let level;
   // Normal hearing logic
   if (ac2000 <= 25 && srt <= 25) {
     level = srt + 40;
   } else {
-    // 2000 Hz rule (Guthrie & Mackersie)
-    if (ac2000 <= 50) level = ac2000 + 25;
-    else if (ac2000 === 55) level = ac2000 + 20;
-    else if (ac2000 >= 60 && ac2000 <= 65) level = ac2000 + 15;
-    else if (ac2000 >= 70 && ac2000 <= 75) level = ac2000 + 10;
-    else if (ac2000 >= 80) level = ac2000 + 5;
+    // 2000 Hz rule (Guthrie & Mackersie) applied to the cochlear threshold (BC)
+    if (bc2000 <= 50) level = bc2000 + 25;
+    else if (bc2000 === 55) level = bc2000 + 20;
+    else if (bc2000 >= 60 && bc2000 <= 65) level = bc2000 + 15;
+    else if (bc2000 >= 70 && bc2000 <= 75) level = bc2000 + 10;
+    else if (bc2000 >= 80) level = bc2000 + 5;
     else level = srt + 40; // Fallback
+    
+    // Add the conductive component (Air-Bone Gap) to overcome the middle ear
+    const abg2000 = Math.max(0, ac2000 - bc2000);
+    level += abg2000;
     
     // Ensure we don't present too close to or below the SRT for reverse-slope losses
     if (level < srt + 15) {
