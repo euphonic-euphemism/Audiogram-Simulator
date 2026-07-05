@@ -11,6 +11,24 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
 
   const ia = transducer === 'HEADPHONES' ? 40 : (transducer === 'INSERTS' ? 55 : 0);
 
+  const getOE = (freq, nteEar) => {
+    const ac = unmaskedAudiogram[nteEar].ac[freq];
+    const bc = unmaskedAudiogram[nteEar].bc[freq] !== undefined ? unmaskedAudiogram[nteEar].bc[freq] : ac;
+    if (ac === undefined || bc === undefined) return 0;
+    
+    // If NTE has a conductive component (ABG >= 15), Occlusion Effect is 0
+    if (ac - bc >= 15) return 0;
+
+    if (transducer === 'HEADPHONES') {
+      if (freq === 250 || freq === 500) return 15;
+      if (freq === 1000) return 10;
+    } else if (transducer === 'INSERTS') {
+      if (freq === 250 || freq === 500) return 10;
+      if (freq === 1000) return 0;
+    }
+    return 0;
+  };
+
   const getLargestABG = (ear) => {
     let max = 0;
     [500, 1000, 2000].forEach(f => {
@@ -41,13 +59,30 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
       <ul className="list-disc pl-5 text-sm space-y-1 text-muted-foreground font-medium">
         {FREQUENCIES.map(f => {
           let reqs = [];
-          if (maskingNeeds.ac.right[f]) reqs.push('Right AC');
-          if (maskingNeeds.bc.right[f]) reqs.push('Right BC');
-          if (maskingNeeds.ac.left[f]) reqs.push('Left AC');
-          if (maskingNeeds.bc.left[f]) reqs.push('Left BC');
+          if (maskingNeeds.ac.right[f]) {
+            const iml = unmaskedAudiogram.left.ac[f] + 10;
+            reqs.push(`Right AC (IML: ${iml} dB EM)`);
+          }
+          if (maskingNeeds.bc.right[f]) {
+            const iml = unmaskedAudiogram.left.ac[f] + getOE(f, 'left') + 10;
+            reqs.push(`Right BC (IML: ${iml} dB EM)`);
+          }
+          if (maskingNeeds.ac.left[f]) {
+            const iml = unmaskedAudiogram.right.ac[f] + 10;
+            reqs.push(`Left AC (IML: ${iml} dB EM)`);
+          }
+          if (maskingNeeds.bc.left[f]) {
+            const iml = unmaskedAudiogram.right.ac[f] + getOE(f, 'right') + 10;
+            reqs.push(`Left BC (IML: ${iml} dB EM)`);
+          }
           
           if (reqs.length > 0) {
-            return <li key={f}><strong>{f} Hz:</strong> {reqs.join(', ')}</li>;
+            return (
+              <li key={f} className="flex flex-col mb-1">
+                <strong>{f} Hz:</strong> 
+                <span className="pl-4">{reqs.join(', ')}</span>
+              </li>
+            );
           }
           return null;
         })}
