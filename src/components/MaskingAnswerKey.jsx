@@ -43,14 +43,8 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
     return max;
   };
 
-  const rightABG = getLargestABG('right');
-  const leftABG = getLargestABG('left');
-
-  const imlSrtRight = unmaskedAudiogram.right.srt - ia + leftABG;
-  const imlSrtLeft = unmaskedAudiogram.left.srt - ia + rightABG;
-
-  const imlWrsRight = getWrsPresentationLevel(patient, 'right') - ia + leftABG;
-  const imlWrsLeft = getWrsPresentationLevel(patient, 'left') - ia + rightABG;
+  // Initial Masking Level for speech relies on a formula: TE Presentation Level - IA + Largest NTE ABG
+  // We provide the generic formula so the student has to work it out.
 
   return (
     <div className="p-6 bg-orange-500/10 border border-orange-500/30 rounded-xl space-y-3">
@@ -88,10 +82,10 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
           return null;
         })}
         
-        {speechMaskingNeeds.srt.right && <li><strong>SRT:</strong> Right Ear (Initial Masking Level: {Math.max(-10, imlSrtRight)} dB EM)</li>}
-        {speechMaskingNeeds.srt.left && <li><strong>SRT:</strong> Left Ear (Initial Masking Level: {Math.max(-10, imlSrtLeft)} dB EM)</li>}
-        {speechMaskingNeeds.wrs.right && <li><strong>WRS:</strong> Right Ear (Initial Masking Level: {Math.max(-10, imlWrsRight)} dB EM)</li>}
-        {speechMaskingNeeds.wrs.left && <li><strong>WRS:</strong> Left Ear (Initial Masking Level: {Math.max(-10, imlWrsLeft)} dB EM)</li>}
+        {speechMaskingNeeds.srt.right && <li><strong>SRT:</strong> Right Ear (IML Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechMaskingNeeds.srt.left && <li><strong>SRT:</strong> Left Ear (IML Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechMaskingNeeds.wrs.right && <li><strong>WRS:</strong> Right Ear (IML Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechMaskingNeeds.wrs.left && <li><strong>WRS:</strong> Left Ear (IML Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
         
         {!anyMaskingNeeded && (
           <li>No masking required for any test.</li>
