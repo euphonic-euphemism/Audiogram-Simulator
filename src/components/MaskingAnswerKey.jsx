@@ -20,8 +20,9 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
     if (ac - bc >= 15) return 0;
 
     if (transducer === 'HEADPHONES') {
-      if (freq === 250 || freq === 500) return 15;
-      if (freq === 1000) return 10;
+      if (freq === 250) return 20;
+      if (freq === 500) return 15;
+      if (freq === 1000) return 5;
     } else if (transducer === 'INSERTS') {
       if (freq === 250 || freq === 500) return 10;
       if (freq === 1000) return 0;
