@@ -49,6 +49,21 @@ export default function StudentAudiogram({ thresholds }) {
           </tbody>
         </table>
       </div>
+
+      <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
+          <h4 className="font-bold text-red-500 text-sm mb-1">Right SRT</h4>
+          <p className="font-semibold text-sm mb-2">{thresholds.right.srt ? `${thresholds.right.srt.level} dB HL (${thresholds.right.srt.isMasked ? 'Masked' : 'Unmasked'})` : '-'}</p>
+          <h4 className="font-bold text-red-500 text-sm mb-1 border-t border-red-500/20 pt-2">Right WRS</h4>
+          <p className="font-semibold text-sm">{thresholds.right.wrs ? `${thresholds.right.wrs.score}% @ ${thresholds.right.wrs.presentationLevel} dB HL (${thresholds.right.wrs.maskingLevel !== null ? `${thresholds.right.wrs.maskingLevel} dB EM Masking` : 'Unmasked'})` : '-'}</p>
+        </div>
+        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-center">
+          <h4 className="font-bold text-blue-500 text-sm mb-1">Left SRT</h4>
+          <p className="font-semibold text-sm mb-2">{thresholds.left.srt ? `${thresholds.left.srt.level} dB HL (${thresholds.left.srt.isMasked ? 'Masked' : 'Unmasked'})` : '-'}</p>
+          <h4 className="font-bold text-blue-500 text-sm mb-1 border-t border-blue-500/20 pt-2">Left WRS</h4>
+          <p className="font-semibold text-sm">{thresholds.left.wrs ? `${thresholds.left.wrs.score}% @ ${thresholds.left.wrs.presentationLevel} dB HL (${thresholds.left.wrs.maskingLevel !== null ? `${thresholds.left.wrs.maskingLevel} dB EM Masking` : 'Unmasked'})` : '-'}</p>
+        </div>
+      </div>
     </div>
   );
 }

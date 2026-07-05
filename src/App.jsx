@@ -79,8 +79,6 @@ function App() {
   };
 
   const handleSaveThreshold = (isMasked = false) => {
-    if (testMode === 'WRS') return;
-    
     setStudentThresholds(prev => {
       const next = { ...prev };
       // Deep copy the ear we are changing
@@ -93,6 +91,8 @@ function App() {
         next[earKey][typeKey][frequency] = { level: toneLevel, isMasked };
       } else if (testMode === 'SRT') {
         next[earKey].srt = { level: toneLevel, isMasked };
+      } else if (testMode === 'WRS') {
+        next[earKey].wrs = { score: responseValue, presentationLevel: toneLevel, maskingLevel: isMasked ? maskingLevel : null };
       }
       return next;
     });
@@ -234,66 +234,74 @@ function App() {
               lockedTransducer={lockedTransducer}
             />
 
-            <AudiometerControl 
-              toneLevel={toneLevel}
-              setToneLevel={setToneLevel}
-              maskingLevel={maskingLevel}
-              setMaskingLevel={setMaskingLevel}
-              transducer={transducer}
-              setTransducer={setTransducer}
-              testMode={testMode}
-              setTestMode={setTestMode}
-              frequency={frequency}
-              setFrequency={setFrequency}
-              isPresenting={isPresenting}
-              setIsPresenting={setIsPresenting}
-              testEar={testEar}
-              setTestEar={setTestEar}
-              onSaveThreshold={handleSaveThreshold}
-              showFormulas={toneQuizPassed && speechQuizPassed}
-            />
-            
-            <PatientResponse 
-              hasResponded={hasResponded} 
-              responseValue={responseValue}
-              testMode={testMode} 
-            />
+            <div className="relative">
+              {!toneQuizPassed && (
+                <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                  <div className="bg-card border shadow-lg p-6 rounded-xl text-center max-w-sm">
+                    <div className="bg-primary/10 text-primary w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">Audiometer Locked</h3>
+                    <p className="text-sm text-muted-foreground">Pass the Tone Masking Clinical Decision Quiz to unlock the audiometer and begin the exam.</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className={!toneQuizPassed ? 'opacity-50 pointer-events-none' : ''}>
+                <AudiometerControl 
+                  toneLevel={toneLevel}
+                  setToneLevel={setToneLevel}
+                  maskingLevel={maskingLevel}
+                  setMaskingLevel={setMaskingLevel}
+                  transducer={transducer}
+                  setTransducer={setTransducer}
+                  testMode={testMode}
+                  setTestMode={setTestMode}
+                  frequency={frequency}
+                  setFrequency={setFrequency}
+                  isPresenting={isPresenting}
+                  setIsPresenting={setIsPresenting}
+                  testEar={testEar}
+                  setTestEar={setTestEar}
+                  onSaveThreshold={handleSaveThreshold}
+                  showFormulas={toneQuizPassed && speechQuizPassed}
+                />
+                
+                <div className="mt-8">
+                  <PatientResponse 
+                    hasResponded={hasResponded} 
+                    responseValue={responseValue}
+                    testMode={testMode} 
+                  />
+                </div>
 
-            <MaskingProfileGraph 
-              history={history}
-              frequency={frequency}
-              testEar={testEar}
-              transducer={transducer}
-              testMode={testMode}
-            />
+                <div className="mt-8">
+                  <MaskingProfileGraph 
+                    history={history}
+                    frequency={frequency}
+                    testEar={testEar}
+                    transducer={transducer}
+                    testMode={testMode}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-8">
             <UnmaskedAudiogram patient={patient} transducer={transducer} unmaskedAudiogram={unmaskedAudiogram} />
             
-            {!(toneQuizPassed && speechQuizPassed) ? (
-              <>
-                {!toneQuizPassed && (
-                  <MaskingQuiz 
-                    patient={patient} 
-                    transducer={effectiveAcTransducer} 
-                    unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={() => handleQuizPassed('tone')} 
-                  />
-                )}
-                {!speechQuizPassed && (
-                  <SpeechMaskingQuiz 
-                    patient={patient} 
-                    transducer={effectiveAcTransducer} 
-                    unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={() => handleQuizPassed('speech')} 
-                  />
-                )}
-              </>
+            {!toneQuizPassed ? (
+              <MaskingQuiz 
+                patient={patient} 
+                transducer={effectiveAcTransducer} 
+                unmaskedAudiogram={unmaskedAudiogram}
+                onQuizPassed={() => handleQuizPassed('tone')} 
+              />
             ) : (
               <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
                 <span className="text-xl">✅</span>
-                <span>Both clinical decision quizzes passed! Proceed with the masking worksheet.</span>
+                <span>Tone Masking Clinical Decision Passed! You may now use the audiometer.</span>
               </div>
             )}
 
@@ -303,6 +311,23 @@ function App() {
               history={history}
               onClear={clearHistory}
             />
+
+            {toneQuizPassed && !speechQuizPassed && (
+              <SpeechMaskingQuiz 
+                patient={patient} 
+                transducer={effectiveAcTransducer} 
+                unmaskedAudiogram={unmaskedAudiogram}
+                studentThresholds={studentThresholds}
+                onQuizPassed={() => handleQuizPassed('speech')} 
+              />
+            )}
+
+            {toneQuizPassed && speechQuizPassed && (
+              <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
+                <span className="text-xl">✅</span>
+                <span>Speech Masking Clinical Decision Passed!</span>
+              </div>
+            )}
             
             <PatientAudiogram patient={patient} />
             
@@ -311,6 +336,7 @@ function App() {
                 patient={patient} 
                 transducer={effectiveAcTransducer} 
                 unmaskedAudiogram={unmaskedAudiogram} 
+                studentThresholds={studentThresholds}
               />
             )}
           </div>

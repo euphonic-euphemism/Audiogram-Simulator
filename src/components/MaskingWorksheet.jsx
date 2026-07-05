@@ -40,11 +40,14 @@ export default function MaskingWorksheet({ history, onClear }) {
                 </td>
               </tr>
             ) : (
-              history.map((record, index) => (
-                <tr key={index} className="border-b border-secondary/50 last:border-0 hover:bg-secondary/20">
-                  <td className="px-4 py-3 font-medium">
-                    {record.mode} {record.mode === 'TONE' ? `${record.frequency}Hz` : ''}
-                  </td>
+              history.map((record, index) => {
+                const earColor = record.testEar === 'right' ? 'text-red-600' : 'text-blue-600';
+                return (
+                  <tr key={index} className={`border-b border-secondary/50 last:border-0 hover:bg-secondary/20 ${earColor}`}>
+                    <td className="px-4 py-3 font-medium flex items-center gap-2">
+                      <span className="text-xs font-bold uppercase opacity-80">({record.testEar === 'right' ? 'R' : 'L'})</span>
+                      <span>{record.mode} {record.mode === 'TONE' ? `${record.frequency}Hz` : ''}</span>
+                    </td>
                   <td className="px-4 py-3">{record.toneLevel}</td>
                   <td className="px-4 py-3">{record.maskingLevel}</td>
                   <td className="px-4 py-3">
@@ -67,8 +70,9 @@ export default function MaskingWorksheet({ history, onClear }) {
                       </span>
                     )}
                   </td>
-                </tr>
-              ))
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

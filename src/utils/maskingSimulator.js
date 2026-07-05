@@ -506,7 +506,7 @@ export function evaluateMaskingNeeds(unmasked, transducer) {
  * SRT: Mask if TE(SRT) - NTE(Best BC) >= IA OR TE(SRT) - NTE(SRT) >= IA
  * WRS: Mask if TE(Presentation Level) - NTE(Best BC) >= IA OR TE(Presentation Level) - NTE(SRT) >= IA
  */
-export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', unmasked) {
+export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', unmasked, studentThresholds = null) {
   const iaThreshold = transducer === 'HEADPHONES' ? 40 : (transducer === 'INSERTS' ? 55 : 0);
   
   const needsMasking = {
@@ -518,32 +518,49 @@ export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', u
     unmasked = calculateUnmaskedAudiogram(patient, transducer);
   }
 
-  // Find best unmasked BC in speech frequencies (250 - 4000) for the given ear
-  const getBestUnmaskedBc = (ear) => {
+  // Find best effective BC in speech frequencies (250 - 4000) for the given ear
+  const getBestEffectiveBc = (ear) => {
     let best = 120;
     [250, 500, 1000, 2000, 4000].forEach(f => {
-      if (unmasked[ear].bc[f] !== undefined && unmasked[ear].bc[f] < best) {
-        best = unmasked[ear].bc[f];
+      let bcVal = unmasked[ear].bc[f];
+      
+      // If student has saved a masked BC threshold, use it instead!
+      if (studentThresholds && studentThresholds[ear] && studentThresholds[ear].bc && studentThresholds[ear].bc[f] !== undefined) {
+        const studentVal = studentThresholds[ear].bc[f];
+        bcVal = typeof studentVal === 'object' ? studentVal.level : studentVal;
+      }
+
+      if (bcVal !== undefined && bcVal < best) {
+        best = bcVal;
       }
     });
-    // Fallback to unmasked SRT or AC if BC is somehow missing entirely, though rare
-    return best < 120 ? best : unmasked[ear].srt;
+    return best < 120 ? best : getEffectiveSrt(ear);
   };
   
-  const rightBestBc = getBestUnmaskedBc('right');
-  const leftBestBc = getBestUnmaskedBc('left');
+  const getEffectiveSrt = (ear) => {
+    if (studentThresholds && studentThresholds[ear] && studentThresholds[ear].srt !== null) {
+      return studentThresholds[ear].srt.level;
+    }
+    return unmasked[ear].srt;
+  };
+  
+  const rightBestBc = getBestEffectiveBc('right');
+  const leftBestBc = getBestEffectiveBc('left');
+  
+  const rightEffectiveSrt = getEffectiveSrt('right');
+  const leftEffectiveSrt = getEffectiveSrt('left');
 
-  // SRT Masking: Compare against both NTE Unmasked SRT and NTE Unmasked Best BC
-  needsMasking.srt.right = (unmasked.right.srt - leftBestBc) >= iaThreshold || (unmasked.right.srt - unmasked.left.srt) >= iaThreshold;
-  needsMasking.srt.left = (unmasked.left.srt - rightBestBc) >= iaThreshold || (unmasked.left.srt - unmasked.right.srt) >= iaThreshold;
+  // SRT Masking: Compare against both NTE Effective SRT and NTE Effective Best BC
+  needsMasking.srt.right = (unmasked.right.srt - leftBestBc) >= iaThreshold || (unmasked.right.srt - leftEffectiveSrt) >= iaThreshold;
+  needsMasking.srt.left = (unmasked.left.srt - rightBestBc) >= iaThreshold || (unmasked.left.srt - rightEffectiveSrt) >= iaThreshold;
 
   // WRS Masking
-  // WRS is evaluated against the NTE Unmasked Best BC and NTE Unmasked SRT
+  // WRS is evaluated against the NTE Effective Best BC and NTE Effective SRT
   const rightWrsLevel = unmasked.right.wrsLevel;
   const leftWrsLevel = unmasked.left.wrsLevel;
 
-  needsMasking.wrs.right = (rightWrsLevel - leftBestBc) >= iaThreshold || (rightWrsLevel - unmasked.left.srt) >= iaThreshold;
-  needsMasking.wrs.left = (leftWrsLevel - rightBestBc) >= iaThreshold || (leftWrsLevel - unmasked.right.srt) >= iaThreshold;
+  needsMasking.wrs.right = (rightWrsLevel - leftBestBc) >= iaThreshold || (rightWrsLevel - leftEffectiveSrt) >= iaThreshold;
+  needsMasking.wrs.left = (leftWrsLevel - rightBestBc) >= iaThreshold || (leftWrsLevel - rightEffectiveSrt) >= iaThreshold;
 
   return needsMasking;
 }

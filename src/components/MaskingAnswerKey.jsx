@@ -1,9 +1,9 @@
 import React from 'react';
 import { FREQUENCIES, evaluateMaskingNeeds, evaluateSpeechMaskingNeeds, getWrsPresentationLevel } from '../utils/maskingSimulator';
 
-export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogram }) {
+export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogram, studentThresholds }) {
   const maskingNeeds = evaluateMaskingNeeds(unmaskedAudiogram, transducer);
-  const speechMaskingNeeds = evaluateSpeechMaskingNeeds(patient, transducer, unmaskedAudiogram);
+  const speechMaskingNeeds = evaluateSpeechMaskingNeeds(patient, transducer, unmaskedAudiogram, studentThresholds);
 
   const anyMaskingNeeded = 
     [...FREQUENCIES].some(f => maskingNeeds.ac.right[f] || maskingNeeds.bc.right[f] || maskingNeeds.ac.left[f] || maskingNeeds.bc.left[f]) ||
@@ -15,7 +15,13 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
     let max = 0;
     [500, 1000, 2000].forEach(f => {
       const ac = unmaskedAudiogram[ear].ac[f];
-      const bc = unmaskedAudiogram[ear].bc[f];
+      
+      let bc = unmaskedAudiogram[ear].bc[f];
+      if (studentThresholds && studentThresholds[ear] && studentThresholds[ear].bc && studentThresholds[ear].bc[f] !== undefined) {
+        const studentVal = studentThresholds[ear].bc[f];
+        bc = typeof studentVal === 'object' ? studentVal.level : studentVal;
+      }
+      
       if (ac !== undefined && bc !== undefined) {
         const abg = ac - bc;
         if (abg > max) max = abg;
@@ -59,10 +65,10 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
           return null;
         })}
         
-        {speechMaskingNeeds.srt.right && <li><strong>SRT:</strong> Right Ear (IML Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
-        {speechMaskingNeeds.srt.left && <li><strong>SRT:</strong> Left Ear (IML Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
-        {speechMaskingNeeds.wrs.right && <li><strong>WRS:</strong> Right Ear (IML Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
-        {speechMaskingNeeds.wrs.left && <li><strong>WRS:</strong> Left Ear (IML Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechMaskingNeeds.srt.right && <li><strong>SRT IML:</strong> Right Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechMaskingNeeds.srt.left && <li><strong>SRT IML:</strong> Left Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechMaskingNeeds.wrs.right && <li><strong>WRS IML:</strong> Right Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechMaskingNeeds.wrs.left && <li><strong>WRS IML:</strong> Left Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
         
         {!anyMaskingNeeded && (
           <li>No masking required for any test.</li>

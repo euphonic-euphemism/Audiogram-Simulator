@@ -16,7 +16,8 @@ export default function AudiometerControl({
   setIsPresenting,
   testEar,
   setTestEar,
-  onSaveThreshold
+  onSaveThreshold,
+  showFormulas
 }) {
   const handleToneChange = (amount) => {
     setToneLevel((prev) => Math.min(120, Math.max(-10, prev + amount)));
@@ -101,7 +102,21 @@ export default function AudiometerControl({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {showFormulas && (testMode === 'SRT' || testMode === 'WRS') && (
+        <div className="bg-orange-500/10 border border-orange-500/30 p-4 rounded-lg mt-2 space-y-2">
+          <h4 className="font-bold text-orange-600 text-sm">Speech Masking Formula (Initial Masking Level)</h4>
+          <p className="text-sm font-semibold text-foreground">
+            IML = TE Presentation Level - IA + NTE Largest ABG
+          </p>
+          <ul className="text-xs text-muted-foreground list-disc pl-5 space-y-1">
+            <li><strong>TE Presentation Level:</strong> The dB HL of the speech being presented to the test ear (For SRT, this is your evaluated SRT value; for WRS, it's the fixed presentation level).</li>
+            <li><strong>IA:</strong> Interaural Attenuation (40 dB for Headphones, 55 dB for Inserts).</li>
+            <li><strong>NTE Largest ABG:</strong> The largest Air-Bone Gap in the non-test ear.</li>
+          </ul>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         {/* Tone/Speech Level */}
         <div className="flex flex-col items-center bg-secondary/30 p-4 rounded-lg">
           <span className="text-sm font-semibold text-muted-foreground mb-2">Test Ear Level (dB HL)</span>
@@ -135,14 +150,12 @@ export default function AudiometerControl({
           {testMode === 'WRS' ? 'Present Word List' : (testMode === 'SRT' ? 'Present Spondee' : 'Present Tone')}
         </button>
         
-        {testMode === 'TONE' && (
-          <button 
-            className="w-full py-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 active:bg-teal-800 transition-colors shadow-sm"
-            onClick={() => onSaveThreshold(true)}
-          >
-            Save Masked Threshold
-          </button>
-        )}
+        <button 
+          className="w-full py-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 active:bg-teal-800 transition-colors shadow-sm"
+          onClick={() => onSaveThreshold(true)}
+        >
+          {testMode === 'WRS' ? 'Save WRS Score & Masking Level' : (testMode === 'SRT' ? 'Save Masked SRT' : 'Save Masked Threshold')}
+        </button>
       </div>
     </div>
   );

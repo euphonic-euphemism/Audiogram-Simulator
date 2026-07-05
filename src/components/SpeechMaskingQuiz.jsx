@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { evaluateSpeechMaskingNeeds } from '../utils/maskingSimulator';
 
-export default function SpeechMaskingQuiz({ patient, transducer, onQuizPassed }) {
+export default function SpeechMaskingQuiz({ patient, transducer, unmaskedAudiogram, studentThresholds, onQuizPassed }) {
   const [needsMaskingOverall, setNeedsMaskingOverall] = useState({ srt: null, wrs: null });
   const [selectedMasking, setSelectedMasking] = useState({
     srt: { right: false, left: false },
@@ -9,7 +9,7 @@ export default function SpeechMaskingQuiz({ patient, transducer, onQuizPassed })
   });
   const [feedback, setFeedback] = useState(null);
 
-  const trueMaskingNeeds = evaluateSpeechMaskingNeeds(patient, transducer);
+  const trueMaskingNeeds = evaluateSpeechMaskingNeeds(patient, transducer, unmaskedAudiogram, studentThresholds);
   
   const hasAnyMaskingNeedSrt = trueMaskingNeeds.srt.right || trueMaskingNeeds.srt.left;
   const hasAnyMaskingNeedWrs = trueMaskingNeeds.wrs.right || trueMaskingNeeds.wrs.left;
@@ -114,15 +114,22 @@ export default function SpeechMaskingQuiz({ patient, transducer, onQuizPassed })
   );
 
   return (
-    <div className="bg-card text-card-foreground p-6 rounded-xl border border-orange-500/30 shadow-sm space-y-6 mt-8">
-      <div>
-        <h3 className="font-bold text-lg m-0 text-orange-600">Clinical Decision: Speech Masking Quiz</h3>
-        <p className="text-sm text-muted-foreground">
-          Review the initial unmasked SRTs above. Note: The rules for speech masking use the Best Bone Conduction threshold in the non-test ear across all speech frequencies (250-4000 Hz) OR the NTE SRT. IA is 40 dB for Headphones and 55 dB for Inserts.
-        </p>
+    <div className="bg-card text-card-foreground p-6 rounded-xl border border-secondary shadow-sm">
+      <div className="flex items-start gap-4 mb-6">
+        <div className="bg-primary/10 p-3 rounded-full text-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div>
+          <h2 className="text-xl font-bold">Clinical Decision: Speech Masking</h2>
+          <p className="text-muted-foreground">Review your pure tone thresholds above to determine if masking is needed for SRT and WRS.</p>
+        </div>
+      </div>
+      
+      <div className="bg-blue-500/10 border border-blue-500/20 text-blue-700 p-3 rounded-lg mb-6 text-sm">
+        <strong>Tip:</strong> In a clinical setting, you should perform Masked Bone Conduction to find the true Bone Conduction thresholds <em>before</em> deciding on Speech Masking needs. The true Air-Bone Gap is required for accurate calculation.
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-8">
         {/* SRT Quiz */}
         <div className="space-y-4">
           <p className="font-semibold text-sm">1. Using the {transducer} rules, do you need to mask for <span className="text-primary font-bold">SRT</span>?</p>
