@@ -43,6 +43,7 @@ function App() {
   const [history, setHistory] = useState([]);
   const [toneQuizPassed, setToneQuizPassed] = useState(false);
   const [speechQuizPassed, setSpeechQuizPassed] = useState(false);
+  const [lockedTransducer, setLockedTransducer] = useState(null);
 
   // Student saved thresholds
   const emptyStudentThresholds = () => ({
@@ -55,7 +56,8 @@ function App() {
   const [patient, setPatient] = useState(() => generateRandomPatient());
 
   // Compute Unmasked Audiogram Once per patient/transducer change to prevent non-deterministic renders
-  const unmaskedAudiogram = useMemo(() => calculateUnmaskedAudiogram(patient, baseAcTransducer), [patient, baseAcTransducer]);
+  const effectiveAcTransducer = lockedTransducer || baseAcTransducer;
+  const unmaskedAudiogram = useMemo(() => calculateUnmaskedAudiogram(patient, effectiveAcTransducer), [patient, effectiveAcTransducer]);
 
   const handleNewPatient = () => {
     setPatient(generateRandomPatient());
@@ -65,6 +67,15 @@ function App() {
     setResponseValue(null);
     setToneQuizPassed(false);
     setSpeechQuizPassed(false);
+    setLockedTransducer(null);
+  };
+
+  const handleQuizPassed = (quizType) => {
+    if (!lockedTransducer) {
+      setLockedTransducer(baseAcTransducer);
+    }
+    if (quizType === 'tone') setToneQuizPassed(true);
+    if (quizType === 'speech') setSpeechQuizPassed(true);
   };
 
   const handleSaveThreshold = (isMasked = false) => {
@@ -220,6 +231,7 @@ function App() {
               studentThresholds={studentThresholds}
               unmaskedAudiogram={unmaskedAudiogram} 
               quizCompleted={toneQuizPassed && speechQuizPassed}
+              lockedTransducer={lockedTransducer}
             />
 
             <AudiometerControl 
@@ -264,17 +276,17 @@ function App() {
                 {!toneQuizPassed && (
                   <MaskingQuiz 
                     patient={patient} 
-                    transducer={transducer} 
+                    transducer={effectiveAcTransducer} 
                     unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={() => setToneQuizPassed(true)} 
+                    onQuizPassed={() => handleQuizPassed('tone')} 
                   />
                 )}
                 {!speechQuizPassed && (
                   <SpeechMaskingQuiz 
                     patient={patient} 
-                    transducer={transducer} 
+                    transducer={effectiveAcTransducer} 
                     unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={() => setSpeechQuizPassed(true)} 
+                    onQuizPassed={() => handleQuizPassed('speech')} 
                   />
                 )}
               </>
@@ -297,7 +309,7 @@ function App() {
             {(toneQuizPassed && speechQuizPassed) && (
               <MaskingAnswerKey 
                 patient={patient} 
-                transducer={transducer} 
+                transducer={effectiveAcTransducer} 
                 unmaskedAudiogram={unmaskedAudiogram} 
               />
             )}

@@ -59,7 +59,7 @@ const SymbolLeftBcMasked = ({ cx, cy, opacity=1 }) => (
   <path d={`M${cx+4},${cy-6} L${cx+10},${cy-6} L${cx+10},${cy+6} L${cx+4},${cy+6}`} stroke="blue" strokeWidth={2} fill="none" opacity={opacity} />
 );
 
-export default function AudiogramGraph({ patient, transducer, studentThresholds, unmaskedAudiogram: unmasked, quizCompleted }) {
+export default function AudiogramGraph({ patient, transducer, studentThresholds, unmaskedAudiogram: unmasked, quizCompleted, lockedTransducer }) {
 
   const needsMasking = evaluateMaskingNeeds(unmasked, transducer);
 
@@ -212,6 +212,12 @@ export default function AudiogramGraph({ patient, transducer, studentThresholds,
     <div className="bg-white p-4 rounded-xl border border-secondary shadow-sm w-full flex flex-col items-center">
       <h3 className="font-bold text-lg mb-2">Visual Audiogram</h3>
       
+      {lockedTransducer && (
+        <div className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded border border-amber-300 mb-3 shadow-sm">
+          Masking Criteria Locked To: {lockedTransducer}
+        </div>
+      )}
+
       <div className="flex justify-between w-full max-w-lg mb-2 px-4 text-sm">
         <div className="flex flex-col gap-1">
           <div className="text-red-600 font-bold bg-red-500/10 px-3 py-1 rounded-md border border-red-500/20 shadow-sm text-center">Right PTA: {rightPta} dB HL</div>
