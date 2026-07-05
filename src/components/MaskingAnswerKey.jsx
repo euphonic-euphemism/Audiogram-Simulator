@@ -68,6 +68,42 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
           <li>No masking required for any test.</li>
         )}
       </ul>
+
+      <div className="mt-6 border-t border-orange-500/20 pt-4">
+        <h4 className="font-bold text-sm text-orange-600 mb-2">Occlusion Effect (OE) Table</h4>
+        <p className="text-xs text-muted-foreground mb-2">
+          Note: If the Non-Test Ear has an Air-Bone Gap &ge; 15 dB, the Occlusion Effect is 0 dB because the middle ear pathology already occludes the pathway.
+        </p>
+        <div className="overflow-hidden rounded border border-orange-500/20">
+          <table className="min-w-full text-xs text-left">
+            <thead className="bg-orange-500/10">
+              <tr>
+                <th className="px-3 py-2 font-bold text-orange-700">Transducer</th>
+                <th className="px-3 py-2 font-bold text-orange-700">250 Hz</th>
+                <th className="px-3 py-2 font-bold text-orange-700">500 Hz</th>
+                <th className="px-3 py-2 font-bold text-orange-700">1000 Hz</th>
+                <th className="px-3 py-2 font-bold text-orange-700">&ge;2000 Hz</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-orange-500/10 bg-white/50">
+              <tr className={transducer === 'HEADPHONES' ? 'bg-orange-500/10 font-bold' : ''}>
+                <td className="px-3 py-2">Headphones</td>
+                <td className="px-3 py-2">20 dB</td>
+                <td className="px-3 py-2">15 dB</td>
+                <td className="px-3 py-2">5 dB</td>
+                <td className="px-3 py-2">0 dB</td>
+              </tr>
+              <tr className={transducer === 'INSERTS' ? 'bg-orange-500/10 font-bold' : ''}>
+                <td className="px-3 py-2">Inserts</td>
+                <td className="px-3 py-2">10 dB</td>
+                <td className="px-3 py-2">10 dB</td>
+                <td className="px-3 py-2">0 dB</td>
+                <td className="px-3 py-2">0 dB</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
