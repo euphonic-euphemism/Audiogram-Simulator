@@ -81,11 +81,14 @@ export function generateRandomPatient() {
   const minIAInserts = { 250: 64, 500: 50, 1000: 56, 2000: 54, 4000: 64, 8000: 54 };
   const maxIAInserts = { 250: 95, 500: 94, 1000: 92, 2000: 72, 4000: 88, 8000: 80 };
 
+  const hpSpeech = Math.floor(Math.random() * (60 - 45 + 1)) + 45;
+  const inSpeech = Math.floor(Math.random() * (75 - 60 + 1)) + 60;
+
   const patient = {
     iaHeadphonesPureTones: {},
-    iaHeadphonesSpeech: Math.floor(Math.random() * (75 - 48 + 1)) + 48,
+    iaHeadphonesSpeech: hpSpeech,
     iaInsertsPureTones: {},
-    iaInsertsSpeech: Math.floor(Math.random() * (64 - 55 + 1)) + 55, // Based on Click range 55-64
+    iaInsertsSpeech: Math.max(hpSpeech + 10, inSpeech),
     iaBone: 0,
     right: { ac: {}, bc: {} },
     left: { ac: {}, bc: {} }
@@ -93,10 +96,14 @@ export function generateRandomPatient() {
 
   FREQUENCIES.forEach(freq => {
     const interpolatedHP = minIAHeadphones[freq] + tHeadphones * (maxIAHeadphones[freq] - minIAHeadphones[freq]);
-    patient.iaHeadphonesPureTones[freq] = Math.round(interpolatedHP / 5) * 5;
+    const hpVal = Math.round(interpolatedHP / 5) * 5;
+    patient.iaHeadphonesPureTones[freq] = hpVal;
 
     const interpolatedInserts = minIAInserts[freq] + tInserts * (maxIAInserts[freq] - minIAInserts[freq]);
-    patient.iaInsertsPureTones[freq] = Math.round(interpolatedInserts / 5) * 5;
+    let inVal = Math.round(interpolatedInserts / 5) * 5;
+    
+    // Ensure Inserts IA is clinically higher than Headphones IA for the same patient
+    patient.iaInsertsPureTones[freq] = Math.max(hpVal + 10, inVal);
   });
 
   const rightConfig = generateEarConfiguration();
@@ -289,13 +296,17 @@ export function checkWrsResponse({
   nteMaskingLevel,
   ia
 }) {
-  // A simple sigmoidal or linear model for WRS based on presentation level above SRT
+  // A sigmoidal (logistic) model for WRS based on presentation level above SRT
   const calculateScore = (presentationLevel, srt, maxWrs) => {
     const sensationLevel = presentationLevel - srt;
     if (sensationLevel <= 0) return 0;
-    if (sensationLevel >= 40) return maxWrs; // Max score typically reached at 40 dB SL
-    // Linear interpolation between 0 and maxWrs
-    return Math.floor((sensationLevel / 40) * maxWrs);
+    
+    // Performance-Intensity (PI-PB) curve parameters
+    const k = 0.15; // Steepness
+    const x0 = 15;  // Midpoint (50% of maxWrs) in dB SL
+    
+    const score = maxWrs / (1 + Math.exp(-k * (sensationLevel - x0)));
+    return Math.round(score);
   };
 
   // Test Ear Contribution
@@ -413,7 +424,7 @@ export function evaluateMaskingNeeds(unmasked, transducer) {
  * SRT: Mask if TE(SRT) - NTE(Best BC) >= IA OR TE(SRT) - NTE(SRT) >= IA
  * WRS: Mask if TE(Presentation Level) - NTE(Best BC) >= IA OR TE(Presentation Level) - NTE(SRT) >= IA
  */
-export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES') {
+export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', unmasked) {
   const iaThreshold = transducer === 'HEADPHONES' ? 40 : (transducer === 'INSERTS' ? 55 : 0);
   
   const needsMasking = {
@@ -421,7 +432,9 @@ export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES') {
     wrs: { right: false, left: false }
   };
 
-  const unmasked = calculateUnmaskedAudiogram(patient, transducer);
+  if (!unmasked) {
+    unmasked = calculateUnmaskedAudiogram(patient, transducer);
+  }
 
   // Find best unmasked BC in speech frequencies (250 - 4000) for the given ear
   const getBestUnmaskedBc = (ear) => {
