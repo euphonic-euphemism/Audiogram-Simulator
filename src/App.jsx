@@ -19,16 +19,18 @@ import {
 } from './utils/maskingSimulator';
 
 function App() {
+  const getRandomTransducer = () => Math.random() > 0.5 ? 'HEADPHONES' : 'INSERTS';
+
   // Simulator State
   const [testMode, setTestMode] = useState('TONE');
-  const [transducer, setTransducer] = useState('HEADPHONES');
+  const [transducer, setTransducer] = useState(getRandomTransducer);
   const [testEar, setTestEar] = useState('right');
   const [frequency, setFrequency] = useState(1000);
   
   // Current Audiometer Settings
   const [toneLevel, setToneLevel] = useState(0);
   const [maskingLevel, setMaskingLevel] = useState(0);
-  const [baseAcTransducer, setBaseAcTransducer] = useState('HEADPHONES');
+  const [baseAcTransducer, setBaseAcTransducer] = useState(transducer);
   
   useEffect(() => {
     if (transducer !== 'BONE') {
@@ -68,6 +70,9 @@ function App() {
     setToneQuizPassed(false);
     setSpeechQuizPassed(false);
     setLockedTransducer(null);
+    const newTransducer = getRandomTransducer();
+    setTransducer(newTransducer);
+    setBaseAcTransducer(newTransducer);
   };
 
   const handleQuizPassed = (quizType) => {
