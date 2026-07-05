@@ -235,7 +235,7 @@ function App() {
               transducer={transducer} 
               studentThresholds={studentThresholds}
               unmaskedAudiogram={unmaskedAudiogram} 
-              quizCompleted={toneQuizPassed && speechQuizPassed}
+              quizCompleted={toneQuizPassed}
               lockedTransducer={lockedTransducer}
             />
 
