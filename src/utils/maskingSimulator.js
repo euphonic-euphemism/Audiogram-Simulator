@@ -160,6 +160,26 @@ export function generateRandomPatient() {
   patient.left.ac = leftConfig.ac;
   patient.left.bc = leftConfig.bc;
 
+  // Generate deterministic unmasked BC offsets to prevent re-render glitches
+  patient.unmaskedBcRight = {};
+  patient.unmaskedBcLeft = {};
+  FREQUENCIES.forEach(freq => {
+    if (freq !== 8000) {
+      const bestBc = Math.min(patient.right.bc[freq], patient.left.bc[freq]);
+      let rightBcMeasured = bestBc;
+      let leftBcMeasured = bestBc;
+      
+      // ~40% chance to have a 5 dB difference due to mastoid placement/calibration
+      if (Math.random() > 0.6) {
+        if (Math.random() > 0.5) rightBcMeasured += 5;
+        else leftBcMeasured += 5;
+      }
+      
+      patient.unmaskedBcRight[freq] = rightBcMeasured;
+      patient.unmaskedBcLeft[freq] = leftBcMeasured;
+    }
+  });
+
   // Calculate PTA (Pure Tone Average at 500, 1000, 2000)
   const rightPTA = (patient.right.ac[500] + patient.right.ac[1000] + patient.right.ac[2000]) / 3;
   const leftPTA = (patient.left.ac[500] + patient.left.ac[1000] + patient.left.ac[2000]) / 3;
@@ -208,24 +228,10 @@ export function calculateUnmaskedAudiogram(patient, transducer = 'HEADPHONES') {
     const rightBcCross = patient.right.bc[freq] !== undefined ? patient.right.bc[freq] : patient.right.ac[freq];
     unmasked.left.ac[freq] = Math.min(patient.left.ac[freq], rightBcCross + ia);
 
-    // Unmasked BC is just the best cochlea, but realistically there can be a 5 dB difference
-    // depending on mastoid placement/calibration. We simulate this by randomly adding 5 dB to one side.
+    // Unmasked BC is deterministic based on the generated patient properties
     if (freq !== 8000) {
-      const bestBc = Math.min(patient.right.bc[freq], patient.left.bc[freq]);
-      let rightBcMeasured = bestBc;
-      let leftBcMeasured = bestBc;
-      
-      // ~40% chance to have a 5 dB difference
-      if (Math.random() > 0.6) {
-        if (Math.random() > 0.5) {
-          rightBcMeasured += 5;
-        } else {
-          leftBcMeasured += 5;
-        }
-      }
-      
-      unmasked.right.bc[freq] = rightBcMeasured;
-      unmasked.left.bc[freq] = leftBcMeasured;
+      unmasked.right.bc[freq] = patient.unmaskedBcRight[freq];
+      unmasked.left.bc[freq] = patient.unmaskedBcLeft[freq];
     }
   });
 

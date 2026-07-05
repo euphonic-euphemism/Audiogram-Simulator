@@ -28,6 +28,13 @@ function App() {
   // Current Audiometer Settings
   const [toneLevel, setToneLevel] = useState(0);
   const [maskingLevel, setMaskingLevel] = useState(0);
+  const [baseAcTransducer, setBaseAcTransducer] = useState('HEADPHONES');
+  
+  useEffect(() => {
+    if (transducer !== 'BONE') {
+      setBaseAcTransducer(transducer);
+    }
+  }, [transducer]);
   
   // Interaction State
   const [isPresenting, setIsPresenting] = useState(false);
@@ -48,7 +55,7 @@ function App() {
   const [patient, setPatient] = useState(() => generateRandomPatient());
 
   // Compute Unmasked Audiogram Once per patient/transducer change to prevent non-deterministic renders
-  const unmaskedAudiogram = useMemo(() => calculateUnmaskedAudiogram(patient, transducer), [patient, transducer]);
+  const unmaskedAudiogram = useMemo(() => calculateUnmaskedAudiogram(patient, baseAcTransducer), [patient, baseAcTransducer]);
 
   const handleNewPatient = () => {
     setPatient(generateRandomPatient());
