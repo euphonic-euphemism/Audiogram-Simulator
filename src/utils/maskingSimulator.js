@@ -184,14 +184,21 @@ export function generateRandomPatient() {
   const rightPTA = (patient.right.ac[500] + patient.right.ac[1000] + patient.right.ac[2000]) / 3;
   const leftPTA = (patient.left.ac[500] + patient.left.ac[1000] + patient.left.ac[2000]) / 3;
 
-  // SRT is typically within +/- 5 dB of PTA
-  // We round it to nearest 5
-  patient.right.srt = Math.round(rightPTA / 5) * 5 + (Math.random() > 0.5 ? 5 : -5);
-  patient.left.srt = Math.round(leftPTA / 5) * 5 + (Math.random() > 0.5 ? 5 : -5);
-  
-  // Keep SRT >= 0
-  patient.right.srt = Math.max(0, patient.right.srt);
-  patient.left.srt = Math.max(0, patient.left.srt);
+  // SRT tends to be slightly better (lower) than PTA, usually within 6 dB, almost always within 12 dB
+  const generateSrt = (pta) => {
+    const rand = Math.random();
+    let shift = 0;
+    if (rand < 0.4) shift = -5; // 40% chance of being 5 dB better
+    else if (rand < 0.7) shift = 0; // 30% chance of being exactly equal (rounded)
+    else if (rand < 0.9) shift = -10; // 20% chance of being 10 dB better
+    else shift = 5; // 10% chance of being 5 dB worse
+    
+    let srt = Math.round(pta / 5) * 5 + shift;
+    return Math.max(0, srt);
+  };
+
+  patient.right.srt = generateSrt(rightPTA);
+  patient.left.srt = generateSrt(leftPTA);
 
   // Max WRS Score (percentage). Randomly assign a true max score (e.g. 60 - 100%)
   patient.right.maxWrs = Math.floor(Math.random() * 9) * 5 + 60; // 60, 65... 100
