@@ -13,7 +13,7 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
 
   const getLargestABG = (ear) => {
     let max = 0;
-    [500, 1000, 2000, 4000].forEach(f => {
+    [500, 1000, 2000].forEach(f => {
       const ac = unmaskedAudiogram[ear].ac[f];
       const bc = unmaskedAudiogram[ear].bc[f];
       if (ac !== undefined && bc !== undefined) {
