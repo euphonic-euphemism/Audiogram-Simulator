@@ -2,6 +2,11 @@
   "name": "masking-worksheet",
   "private": true,
   "version": "0.0.0",
+  "description": "Clinical Masking Simulator Desktop App",
+  "author": {
+    "name": "Author",
+    "email": "author@example.com"
+  },
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -47,7 +52,7 @@
     "concurrently": "^10.0.3",
     "cross-env": "^10.1.0",
     "electron": "^43.0.0",
-    "electron-builder": "^26.15.3",
+    "electron-builder": "^24.13.3",
     "eslint": "^9.15.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
