@@ -30,6 +30,8 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
     return max;
   };
 
+  const getSrt = (ear) => studentThresholds?.[ear]?.srt !== null ? studentThresholds[ear].srt.level : unmaskedAudiogram[ear].srt;
+
   // Initial Masking Level for speech relies on a formula: TE Presentation Level - IA + Largest NTE ABG
   // We provide the generic formula so the student has to work it out.
 
@@ -65,10 +67,10 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
           return null;
         })}
         
-        {speechQuizPassed && speechMaskingNeeds.srt.right && <li><strong>SRT IML:</strong> Right Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
-        {speechQuizPassed && speechMaskingNeeds.srt.left && <li><strong>SRT IML:</strong> Left Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
-        {speechQuizPassed && speechMaskingNeeds.wrs.right && <li><strong>WRS IML:</strong> Right Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
-        {speechQuizPassed && speechMaskingNeeds.wrs.left && <li><strong>WRS IML:</strong> Left Ear (Formula: TE Presentation Level - IA + Largest NTE ABG)</li>}
+        {speechQuizPassed && speechMaskingNeeds.srt.right && <li><strong>SRT IML:</strong> Right Ear (Formula: TE SRT [{getSrt('right')}] - IA [{ia}] + Largest NTE ABG [{getLargestABG('left')}] = <strong>{getSrt('right') - ia + getLargestABG('left')} dB EM</strong>)</li>}
+        {speechQuizPassed && speechMaskingNeeds.srt.left && <li><strong>SRT IML:</strong> Left Ear (Formula: TE SRT [{getSrt('left')}] - IA [{ia}] + Largest NTE ABG [{getLargestABG('right')}] = <strong>{getSrt('left') - ia + getLargestABG('right')} dB EM</strong>)</li>}
+        {speechQuizPassed && speechMaskingNeeds.wrs.right && <li><strong>WRS IML:</strong> Right Ear (Formula: TE Pres Level [{unmaskedAudiogram.right.wrsLevel}] - IA [{ia}] + Largest NTE ABG [{getLargestABG('left')}] = <strong>{unmaskedAudiogram.right.wrsLevel - ia + getLargestABG('left')} dB EM</strong>)</li>}
+        {speechQuizPassed && speechMaskingNeeds.wrs.left && <li><strong>WRS IML:</strong> Left Ear (Formula: TE Pres Level [{unmaskedAudiogram.left.wrsLevel}] - IA [{ia}] + Largest NTE ABG [{getLargestABG('right')}] = <strong>{unmaskedAudiogram.left.wrsLevel - ia + getLargestABG('right')} dB EM</strong>)</li>}
         
         {!anyMaskingNeeded && (
           <li>No masking required for any test.</li>

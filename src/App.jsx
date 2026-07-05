@@ -97,7 +97,26 @@ function App() {
       } else if (testMode === 'SRT') {
         next[earKey].srt = { level: toneLevel, isMasked };
       } else if (testMode === 'WRS') {
-        next[earKey].wrs = { score: responseValue, presentationLevel: toneLevel, maskingLevel: isMasked ? maskingLevel : null };
+        const isRight = earKey === 'right';
+        const teSrt = isRight ? patient.right.srt : patient.left.srt;
+        const teMaxWrs = isRight ? patient.right.maxWrs : patient.left.maxWrs;
+        const nteSrt = isRight ? patient.left.srt : patient.right.srt;
+
+        const maskingIA = getIA(baseAcTransducer, patient, testMode, frequency);
+        const ia = getIA(transducer, patient, testMode, frequency);
+
+        const calculatedScore = checkWrsResponse({
+          teSrt,
+          teMaxWrs,
+          nteSrt,
+          nteBestBc: nteSrt,
+          tePresentationLevel: toneLevel,
+          nteMaskingLevel: maskingLevel,
+          ia,
+          maskingIA
+        });
+
+        next[earKey].wrs = { score: calculatedScore, presentationLevel: toneLevel, maskingLevel: isMasked ? maskingLevel : null };
       }
       return next;
     });
