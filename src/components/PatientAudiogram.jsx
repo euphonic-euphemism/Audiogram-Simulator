@@ -1,8 +1,37 @@
 import React, { useState } from 'react';
-import { FREQUENCIES, getWrsPresentationLevel } from '../utils/maskingSimulator';
+import { FREQUENCIES, getWrsPresentationLevel, evaluateSpeechMaskingNeeds } from '../utils/maskingSimulator';
 
-export default function PatientAudiogram({ patient, onNewPatient }) {
+export default function PatientAudiogram({ patient, transducer }) {
   const [show, setShow] = useState(false);
+
+  const getLargestAbgSpeech = (ear) => {
+    const freqs = [500, 1000, 2000];
+    let maxAbg = 0;
+    freqs.forEach(f => {
+      const ac = patient[ear].ac[f];
+      const bc = patient[ear].bc[f];
+      if (ac !== undefined && bc !== undefined) {
+        maxAbg = Math.max(maxAbg, ac - bc);
+      }
+    });
+    return maxAbg;
+  };
+
+  const ia = transducer === 'INSERTS' ? 55 : (transducer === 'HEADPHONES' ? 40 : 0);
+  const needsMasking = evaluateSpeechMaskingNeeds(patient, transducer || 'HEADPHONES');
+
+  const getSrtIml = (ear) => {
+    if (!needsMasking.srt[ear]) return 'Not Req';
+    const nte = ear === 'right' ? 'left' : 'right';
+    return (patient[ear].srt - ia + getLargestAbgSpeech(nte)) + ' dB';
+  };
+
+  const getWrsIml = (ear) => {
+    if (!needsMasking.wrs[ear]) return 'Not Req';
+    const nte = ear === 'right' ? 'left' : 'right';
+    const level = getWrsPresentationLevel(patient, ear);
+    return (level - ia + getLargestAbgSpeech(nte)) + ' dB';
+  };
 
   return (
     <div className="bg-secondary/20 p-6 rounded-xl border border-secondary text-sm space-y-4">
@@ -63,13 +92,17 @@ export default function PatientAudiogram({ patient, onNewPatient }) {
             <div className="p-3 border border-red-500/30 bg-red-500/10 rounded-lg">
               <h4 className="font-bold text-red-500 mb-1">Right Ear Speech</h4>
               <p className="text-muted-foreground">SRT: {patient.right.srt} dB HL</p>
+              <p className="text-red-700 font-semibold text-xs mb-2">Masking IML: {getSrtIml('right')}</p>
               <p className="text-muted-foreground">WRS Level: {getWrsPresentationLevel(patient, 'right')} dB HL</p>
+              <p className="text-red-700 font-semibold text-xs mb-2">Masking IML: {getWrsIml('right')}</p>
               <p className="text-muted-foreground">Max WRS: {patient.right.maxWrs}%</p>
             </div>
             <div className="p-3 border border-blue-500/30 bg-blue-500/10 rounded-lg">
               <h4 className="font-bold text-blue-500 mb-1">Left Ear Speech</h4>
               <p className="text-muted-foreground">SRT: {patient.left.srt} dB HL</p>
+              <p className="text-blue-700 font-semibold text-xs mb-2">Masking IML: {getSrtIml('left')}</p>
               <p className="text-muted-foreground">WRS Level: {getWrsPresentationLevel(patient, 'left')} dB HL</p>
+              <p className="text-blue-700 font-semibold text-xs mb-2">Masking IML: {getWrsIml('left')}</p>
               <p className="text-muted-foreground">Max WRS: {patient.left.maxWrs}%</p>
             </div>
           </div>
