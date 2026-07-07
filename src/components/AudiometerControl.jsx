@@ -114,7 +114,7 @@ export default function AudiometerControl({
           <ul className="text-xs text-muted-foreground list-disc pl-5 space-y-1">
             <li><strong>TE Presentation Level:</strong> The dB HL of the speech being presented to the test ear (For SRT, this is your evaluated SRT value; for WRS, it's the fixed presentation level).</li>
             <li><strong>IA:</strong> Interaural Attenuation (40 dB for Headphones, 55 dB for Inserts).</li>
-            <li><strong>NTE Largest ABG:</strong> The largest Air-Bone Gap in the non-test ear.</li>
+            <li><strong>NTE Largest ABG:</strong> The largest Air-Bone Gap in the non-test ear from the speech frequencies (500, 1000, and 2000 Hz).</li>
           </ul>
         </div>
       )}
