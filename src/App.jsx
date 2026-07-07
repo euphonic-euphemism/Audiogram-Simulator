@@ -271,7 +271,7 @@ function App() {
               onClear={clearHistory}
             />
             
-            <PatientAudiogram patient={patient} />
+            <PatientAudiogram patient={patient} transducer={transducer} />
             
             {(toneQuizPassed && speechQuizPassed) && (
               <MaskingAnswerKey 
