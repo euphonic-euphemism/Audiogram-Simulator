@@ -17,9 +17,7 @@ export default function AudiometerControl({
   testEar,
   setTestEar,
   onSaveThreshold,
-  showFormulas,
-  lockedTransducer,
-  saveFeedback
+  showFormulas
 }) {
   const handleToneChange = (amount) => {
     setToneLevel((prev) => Math.min(120, Math.max(-10, prev + amount)));
@@ -67,7 +65,10 @@ export default function AudiometerControl({
         )}
 
         <div className="flex flex-col gap-1 col-span-2 md:col-span-2">
-          <label className="text-sm font-semibold text-muted-foreground">Transducer</label>
+          <div className="flex justify-between items-end">
+            <label className="text-sm font-semibold text-muted-foreground">Transducer</label>
+            <span className="text-[10px] font-medium text-muted-foreground/80">Min IA: Headphones 40dB, Inserts 55dB</span>
+          </div>
           <select 
             value={transducer} 
             onChange={(e) => {
@@ -82,10 +83,9 @@ export default function AudiometerControl({
             {Object.keys(TRANSDUCERS).map((key) => {
               // Bone conduction usually isn't used for speech in standard basic simulators, 
               // but we allow it for TONE. Hide for speech if you want, or just leave it.
-              const isLockedAc = lockedTransducer && key !== 'BONE' && key !== lockedTransducer;
               return (
-                <option key={key} value={key} disabled={isLockedAc}>
-                  {TRANSDUCERS[key].name} (IA: {TRANSDUCERS[key].defaultIA === 0 ? '0' : 'Var'}) {isLockedAc ? '(Locked)' : ''}
+                <option key={key} value={key}>
+                  {TRANSDUCERS[key].name} (IA: {TRANSDUCERS[key].defaultIA === 0 ? '0' : 'Var'})
                 </option>
               )
             })}
@@ -121,7 +121,7 @@ export default function AudiometerControl({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         {/* Tone/Speech Level */}
-        <div className="flex flex-col items-center justify-end bg-secondary/30 p-4 rounded-lg">
+        <div className="flex flex-col items-center bg-secondary/30 p-4 rounded-lg">
           <span className="text-sm font-semibold text-muted-foreground mb-2">Test Ear Level (dB HL)</span>
           <div className="text-4xl font-bold mb-4 w-24 text-center">{toneLevel}</div>
           <div className="flex gap-2">
@@ -130,44 +130,53 @@ export default function AudiometerControl({
           </div>
         </div>
 
-        {/* Masking Level and Save Button */}
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            {saveFeedback && (
-              <div className={`p-2 text-sm font-bold text-center rounded ${saveFeedback.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {saveFeedback.message}
-              </div>
-            )}
-            <button 
-              className="w-full py-3 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 active:bg-teal-800 transition-colors shadow-sm"
-              onClick={() => onSaveThreshold(true)}
-            >
-              {testMode === 'WRS' ? 'Save WRS Score & Masking Level' : (testMode === 'SRT' ? 'Save Masked SRT' : 'Save Masked Threshold')}
-            </button>
-          </div>
-          
-          <div className="flex flex-col items-center bg-secondary/30 p-4 rounded-lg flex-1">
-            <span className="text-sm font-semibold text-muted-foreground mb-2">Non-Test Ear Masking (dB EM)</span>
-            <div className="text-4xl font-bold mb-4 w-24 text-center">{maskingLevel}</div>
-            <div className="flex gap-2">
-              <button onClick={() => handleMaskingChange(-5)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80">-5</button>
-              <button onClick={() => handleMaskingChange(5)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80">+5</button>
-            </div>
+        {/* Masking Level */}
+        <div className="flex flex-col items-center bg-secondary/30 p-4 rounded-lg">
+          <span className="text-sm font-semibold text-muted-foreground mb-2">Non-Test Ear Masking (dB EM)</span>
+          <div className="text-4xl font-bold mb-4 w-24 text-center">{maskingLevel}</div>
+          <div className="flex gap-2">
+            <button onClick={() => handleMaskingChange(-5)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80">-5</button>
+            <button onClick={() => handleMaskingChange(5)} className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80">+5</button>
           </div>
         </div>
       </div>
 
-      <div className="flex mt-2">
+      <div className="flex gap-4">
         <button 
           onMouseDown={() => setIsPresenting(true)}
           onMouseUp={() => setIsPresenting(false)}
           onMouseLeave={() => setIsPresenting(false)}
           onTouchStart={() => setIsPresenting(true)}
           onTouchEnd={() => setIsPresenting(false)}
-          className={`w-full py-6 text-2xl font-bold rounded-lg transition-colors duration-150 ${isPresenting ? 'bg-primary text-primary-foreground scale-[0.98]' : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'}`}
+          className={`w-full py-4 text-xl font-bold rounded-lg transition-colors duration-150 ${isPresenting ? 'bg-primary text-primary-foreground scale-[0.98]' : 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'}`}
         >
           {testMode === 'WRS' ? 'Present Word List' : (testMode === 'SRT' ? 'Present Spondee' : 'Present Tone')}
         </button>
+        
+        {testMode === 'TONE' && (
+          <div className="flex flex-col gap-2 w-full">
+            <button 
+              className="w-full py-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 active:bg-teal-800 transition-colors shadow-sm"
+              onClick={() => onSaveThreshold(true, 'OK')}
+            >
+              Save Masked Threshold
+            </button>
+            <div className="flex gap-2">
+              <button 
+                className="flex-1 py-2 bg-slate-200 text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-300 active:bg-slate-400 transition-colors"
+                onClick={() => onSaveThreshold(true, 'NO_RESPONSE')}
+              >
+                Save No Response
+              </button>
+              <button 
+                className="flex-1 py-2 bg-slate-200 text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-300 active:bg-slate-400 transition-colors"
+                onClick={() => onSaveThreshold(true, 'CNT')}
+              >
+                Save Could Not Test
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

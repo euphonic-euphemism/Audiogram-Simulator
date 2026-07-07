@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FREQUENCIES, evaluateMaskingNeeds, calculateUnmaskedAudiogram } from '../utils/maskingSimulator';
+import { FREQUENCIES, evaluateMaskingNeeds } from '../utils/maskingSimulator';
 
-export default function MaskingQuiz({ patient, transducer, onQuizPassed }) {
+export default function MaskingQuiz({ patient, transducer, unmaskedAudiogram, onQuizPassed }) {
   const [needsMaskingOverall, setNeedsMaskingOverall] = useState({ ac: null, bc: null });
   const [selectedMasking, setSelectedMasking] = useState({
     ac: { right: {}, left: {} },
@@ -9,7 +9,6 @@ export default function MaskingQuiz({ patient, transducer, onQuizPassed }) {
   });
   const [feedback, setFeedback] = useState(null);
 
-  const unmaskedAudiogram = calculateUnmaskedAudiogram(patient, transducer);
   const trueMaskingNeeds = evaluateMaskingNeeds(unmaskedAudiogram, transducer);
   
   const hasAnyMaskingNeedAc = Object.values(trueMaskingNeeds.ac.right).some(v => v) || 
@@ -159,6 +158,12 @@ export default function MaskingQuiz({ patient, transducer, onQuizPassed }) {
         <p className="text-sm text-muted-foreground">
           Review the initial unmasked audiogram above. Make sure to evaluate both Air Conduction and Bone Conduction.
         </p>
+        <div className="mt-3 p-3 bg-blue-500/10 rounded-lg inline-block border border-blue-500/20">
+          <p className="text-sm font-semibold text-blue-800 m-0">
+            Current Transducer: <span className="font-bold">{transducer === 'INSERTS' ? 'Insert Earphones' : 'Headphones'}</span><br/>
+            Minimum IA: <span className="font-bold">{transducer === 'INSERTS' ? '55 dB' : '40 dB'}</span>
+          </p>
+        </div>
       </div>
 
       <div className="space-y-4">

@@ -20,7 +20,7 @@ const getY = (db) => {
   return MARGIN.top + GRAPH_H - ((db - MIN_DB) / DB_RANGE) * GRAPH_H;
 };
 
-export default function MaskingProfileGraph({ history, frequency, testEar, transducer, testMode }) {
+export default function MaskingProfileGraph({ history, frequency, testEar, transducer, testMode, patient }) {
   if (testMode !== 'TONE') {
     return null;
   }
@@ -41,6 +41,55 @@ export default function MaskingProfileGraph({ history, frequency, testEar, trans
     const threshold = Math.min(...tonesAtMl);
     return { x: getX(ml), y: getY(threshold) };
   });
+
+  const rawPoints = maskingLevels.map(ml => {
+    const tonesAtMl = relevantHistory.filter(h => h.maskingLevel === ml).map(h => h.toneLevel);
+    return { ml, th: Math.min(...tonesAtMl) };
+  });
+
+  let hasPlateau = false;
+  const maskByTone = {};
+  rawPoints.forEach(p => {
+    if (!maskByTone[p.th]) maskByTone[p.th] = [];
+    maskByTone[p.th].push(p.ml);
+  });
+  for (const th in maskByTone) {
+    const masks = maskByTone[th];
+    if (Math.max(...masks) - Math.min(...masks) >= 15) {
+      hasPlateau = true;
+    }
+  }
+
+  let showOvermaskingWarning = false;
+  
+  if (!hasPlateau && rawPoints.length >= 3 && patient && patient[testEar]) {
+    const p1 = rawPoints[rawPoints.length - 3];
+    const p2 = rawPoints[rawPoints.length - 2];
+    const p3 = rawPoints[rawPoints.length - 1];
+
+    const isLinear1 = (p2.th > p1.th) && (p2.ml > p1.ml) && ((p2.th - p1.th) / (p2.ml - p1.ml) >= 0.8);
+    const isLinear2 = (p3.th > p2.th) && (p3.ml > p2.ml) && ((p3.th - p2.th) / (p3.ml - p2.ml) >= 0.8);
+
+    if (isLinear1 && isLinear2) {
+      const teBestBc = patient[testEar].bc[frequency] !== undefined ? patient[testEar].bc[frequency] : patient[testEar].ac[frequency];
+      
+      let ia = 0;
+      if (transducer === 'HEADPHONES') {
+        ia = patient.iaHeadphonesPureTones[frequency] || 40;
+      } else if (transducer === 'INSERTS') {
+        ia = patient.iaInsertsPureTones[frequency] || 55;
+      } else if (transducer === 'BONE') {
+        ia = patient.iaBone || 0;
+      }
+
+      const overmaskingThreshold = teBestBc + ia;
+      const currentMaskingLevel = rawPoints[rawPoints.length - 1].ml;
+
+      if (currentMaskingLevel >= overmaskingThreshold) {
+        showOvermaskingWarning = true;
+      }
+    }
+  }
 
   const renderGrid = () => {
     const lines = [];
@@ -137,6 +186,17 @@ export default function MaskingProfileGraph({ history, frequency, testEar, trans
         <p className="text-sm text-muted-foreground mt-4 text-center">
           No positive responses recorded yet for this condition.
         </p>
+      )}
+
+      {showOvermaskingWarning && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm max-w-lg text-center">
+          <strong>Warning:</strong> The masking profile is linear and a plateau is unlikely because overmasking has been reached. A plateau is not possible with the current masking levels.
+          {transducer === 'BONE' && (
+            <span className="block mt-2 font-semibold">
+              Since you are performing Bone Conduction masking, consider removing the occlusion effect correction factor from your initial masking level and trying again.
+            </span>
+          )}
+        </div>
       )}
     </div>
   );
