@@ -23,6 +23,7 @@ import {
 function App() {
   // Simulator State
   const [testMode, setTestMode] = useState('TONE');
+  const [primaryTransducer, setPrimaryTransducer] = useState('HEADPHONES');
   const [transducer, setTransducer] = useState('HEADPHONES');
   const [testEar, setTestEar] = useState('right');
   const [frequency, setFrequency] = useState(1000);
@@ -53,6 +54,9 @@ function App() {
   const unmaskedAudiogram = useMemo(() => calculateUnmaskedAudiogram(patient, transducer), [patient, transducer]);
 
   const handleNewPatient = () => {
+    const newTransducer = Math.random() > 0.5 ? 'INSERTS' : 'HEADPHONES';
+    setPrimaryTransducer(newTransducer);
+    setTransducer(newTransducer);
     setPatient(generateRandomPatient());
     setHistory([]);
     setStudentThresholds(emptyStudentThresholds());
@@ -238,6 +242,7 @@ function App() {
               setMaskingLevel={setMaskingLevel}
               transducer={transducer}
               setTransducer={setTransducer}
+              primaryTransducer={primaryTransducer}
               testMode={testMode}
               setTestMode={setTestMode}
               frequency={frequency}
