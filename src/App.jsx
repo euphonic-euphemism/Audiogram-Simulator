@@ -15,12 +15,15 @@ import {
   getIA, 
   checkThresholdResponse, 
   checkWrsResponse,
-  calculateUnmaskedAudiogram
+  calculateUnmaskedAudiogram,
+  evaluateMaskingNeeds,
+  FREQUENCIES
 } from './utils/maskingSimulator';
 
 function App() {
   // Simulator State
   const [testMode, setTestMode] = useState('TONE');
+  const [primaryTransducer, setPrimaryTransducer] = useState('HEADPHONES');
   const [transducer, setTransducer] = useState('HEADPHONES');
   const [testEar, setTestEar] = useState('right');
   const [frequency, setFrequency] = useState(1000);
@@ -51,6 +54,9 @@ function App() {
   const unmaskedAudiogram = useMemo(() => calculateUnmaskedAudiogram(patient, transducer), [patient, transducer]);
 
   const handleNewPatient = () => {
+    const newTransducer = Math.random() > 0.5 ? 'INSERTS' : 'HEADPHONES';
+    setPrimaryTransducer(newTransducer);
+    setTransducer(newTransducer);
     setPatient(generateRandomPatient());
     setHistory([]);
     setStudentThresholds(emptyStudentThresholds());
@@ -58,6 +64,33 @@ function App() {
     setResponseValue(null);
     setToneQuizPassed(false);
     setSpeechQuizPassed(false);
+  };
+
+  const handleToneQuizPassed = () => {
+    setToneQuizPassed(true);
+    
+    // Auto-populate thresholds that don't need masking
+    const maskingNeeds = evaluateMaskingNeeds(unmaskedAudiogram, transducer);
+    setStudentThresholds(prev => {
+      const next = { ...prev };
+      ['right', 'left'].forEach(ear => {
+        next[ear] = { ...next[ear] };
+        ['ac', 'bc'].forEach(type => {
+          next[ear][type] = { ...next[ear][type] };
+          FREQUENCIES.forEach(f => {
+            const val = unmaskedAudiogram[ear][type][f];
+            if (val !== undefined && val !== null) {
+              const needsMasking = maskingNeeds[type][ear][f];
+              if (!needsMasking) {
+                // Save it as accepted unmasked threshold
+                next[ear][type][f] = { level: val, isMasked: false, status: 'OK' };
+              }
+            }
+          });
+        });
+      });
+      return next;
+    });
   };
 
   const handleSaveThreshold = (isMasked = false, status = 'OK') => {
@@ -198,6 +231,8 @@ function App() {
               transducer={transducer} 
               studentThresholds={studentThresholds}
               unmaskedAudiogram={unmaskedAudiogram} 
+              toneQuizPassed={toneQuizPassed}
+              speechQuizPassed={speechQuizPassed}
             />
 
             <AudiometerControl 
@@ -207,6 +242,7 @@ function App() {
               setMaskingLevel={setMaskingLevel}
               transducer={transducer}
               setTransducer={setTransducer}
+              primaryTransducer={primaryTransducer}
               testMode={testMode}
               setTestMode={setTestMode}
               frequency={frequency}
@@ -245,7 +281,7 @@ function App() {
                     patient={patient} 
                     transducer={transducer} 
                     unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={() => setToneQuizPassed(true)} 
+                    onQuizPassed={handleToneQuizPassed} 
                   />
                 )}
                 {!speechQuizPassed && (
