@@ -59,7 +59,7 @@ const SymbolLeftBcMasked = ({ cx, cy, opacity=1 }) => (
   <path d={`M${cx+4},${cy-6} L${cx+10},${cy-6} L${cx+10},${cy+6} L${cx+4},${cy+6}`} stroke="blue" strokeWidth={2} fill="none" opacity={opacity} />
 );
 
-export default function AudiogramGraph({ patient, transducer, studentThresholds, unmaskedAudiogram: unmasked, quizzesPassed }) {
+export default function AudiogramGraph({ patient, transducer, studentThresholds, unmaskedAudiogram: unmasked, toneQuizPassed, speechQuizPassed }) {
   const maskingNeeds = evaluateMaskingNeeds(unmasked, transducer);
 
   const getPta = (ear) => {
@@ -175,7 +175,7 @@ export default function AudiogramGraph({ patient, transducer, studentThresholds,
       const y = getY(val);
       
       const needsMasking = maskingNeeds[type][ear][f];
-      const opacity = (!needsMasking && quizzesPassed) ? 1 : 0.25;
+      const opacity = (!needsMasking && toneQuizPassed) ? 1 : 0.25;
 
       if (ear === 'right' && type === 'ac') return <SymbolRightAcUnmasked key={`u-${ear}-${type}-${f}`} cx={x} cy={y} opacity={opacity} />;
       if (ear === 'left' && type === 'ac') return <SymbolLeftAcUnmasked key={`u-${ear}-${type}-${f}`} cx={x} cy={y} opacity={opacity} />;
