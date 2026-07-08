@@ -8,6 +8,7 @@ export default function AudiometerControl({
   setMaskingLevel,
   transducer,
   setTransducer,
+  primaryTransducer,
   testMode,
   setTestMode,
   frequency,
@@ -80,15 +81,14 @@ export default function AudiometerControl({
             }}
             className="bg-input border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            {Object.keys(TRANSDUCERS).map((key) => {
-              // Bone conduction usually isn't used for speech in standard basic simulators, 
-              // but we allow it for TONE. Hide for speech if you want, or just leave it.
-              return (
+            {Object.keys(TRANSDUCERS)
+              .filter(key => key === primaryTransducer || key === 'BONE')
+              .map((key) => (
                 <option key={key} value={key}>
                   {TRANSDUCERS[key].name} (IA: {TRANSDUCERS[key].defaultIA === 0 ? '0' : 'Var'})
                 </option>
-              )
-            })}
+              ))
+            }
           </select>
         </div>
 

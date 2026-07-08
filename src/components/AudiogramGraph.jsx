@@ -59,9 +59,8 @@ const SymbolLeftBcMasked = ({ cx, cy, opacity=1 }) => (
   <path d={`M${cx+4},${cy-6} L${cx+10},${cy-6} L${cx+10},${cy+6} L${cx+4},${cy+6}`} stroke="blue" strokeWidth={2} fill="none" opacity={opacity} />
 );
 
-export default function AudiogramGraph({ patient, transducer, studentThresholds, unmaskedAudiogram: unmasked, quizCompleted, lockedTransducer }) {
-
-  const needsMasking = evaluateMaskingNeeds(unmasked, transducer);
+export default function AudiogramGraph({ patient, transducer, studentThresholds, unmaskedAudiogram: unmasked, toneQuizPassed, speechQuizPassed }) {
+  const maskingNeeds = evaluateMaskingNeeds(unmasked, transducer);
 
   const getPta = (ear) => {
     const freqs = [500, 1000, 2000];
@@ -120,20 +119,50 @@ export default function AudiogramGraph({ patient, transducer, studentThresholds,
       
       const val = typeof data === 'object' ? data.level : data;
       const isMasked = typeof data === 'object' ? data.isMasked : false;
+      const status = typeof data === 'object' ? data.status : null;
       const x = getX(f);
       const y = getY(val);
 
-      if (ear === 'right' && type === 'ac' && !isMasked) return <SymbolRightAcUnmasked key={`${ear}-${type}-${f}`} cx={x} cy={y} />;
-      if (ear === 'right' && type === 'ac' && isMasked) return <SymbolRightAcMasked key={`${ear}-${type}-${f}`} cx={x} cy={y} />;
-      if (ear === 'left' && type === 'ac' && !isMasked) return <SymbolLeftAcUnmasked key={`${ear}-${type}-${f}`} cx={x} cy={y} />;
-      if (ear === 'left' && type === 'ac' && isMasked) return <SymbolLeftAcMasked key={`${ear}-${type}-${f}`} cx={x} cy={y} />;
-      
-      if (ear === 'right' && type === 'bc' && !isMasked) return <SymbolRightBcUnmasked key={`${ear}-${type}-${f}`} cx={x} cy={y} />;
-      if (ear === 'right' && type === 'bc' && isMasked) return <SymbolRightBcMasked key={`${ear}-${type}-${f}`} cx={x} cy={y} />;
-      if (ear === 'left' && type === 'bc' && !isMasked) return <SymbolLeftBcUnmasked key={`${ear}-${type}-${f}`} cx={x} cy={y} />;
-      if (ear === 'left' && type === 'bc' && isMasked) return <SymbolLeftBcMasked key={`${ear}-${type}-${f}`} cx={x} cy={y} />;
-      
-      return null;
+      let SymbolComponent = null;
+
+      // Special rule: "The could not test symbol should be the appropriate masked bone conduction threshold"
+      if (status === 'CNT') {
+        SymbolComponent = ear === 'right' ? SymbolRightBcMasked : SymbolLeftBcMasked;
+      } else {
+        if (ear === 'right' && type === 'ac' && !isMasked) SymbolComponent = SymbolRightAcUnmasked;
+        else if (ear === 'right' && type === 'ac' && isMasked) SymbolComponent = SymbolRightAcMasked;
+        else if (ear === 'left' && type === 'ac' && !isMasked) SymbolComponent = SymbolLeftAcUnmasked;
+        else if (ear === 'left' && type === 'ac' && isMasked) SymbolComponent = SymbolLeftAcMasked;
+        else if (ear === 'right' && type === 'bc' && !isMasked) SymbolComponent = SymbolRightBcUnmasked;
+        else if (ear === 'right' && type === 'bc' && isMasked) SymbolComponent = SymbolRightBcMasked;
+        else if (ear === 'left' && type === 'bc' && !isMasked) SymbolComponent = SymbolLeftBcUnmasked;
+        else if (ear === 'left' && type === 'bc' && isMasked) SymbolComponent = SymbolLeftBcMasked;
+      }
+
+      if (!SymbolComponent) return null;
+
+      const color = ear === 'right' ? 'red' : 'blue';
+
+      return (
+        <g key={`${ear}-${type}-${f}`}>
+          <SymbolComponent cx={x} cy={y} />
+          {status === 'NO_RESPONSE' && ear === 'right' && (
+            <g stroke="red" fill="red">
+              <line x1={x - 6} y1={y + 6} x2={x - 14} y2={y + 14} strokeWidth={2}/>
+              <polygon points={`${x - 14},${y + 14} ${x - 9},${y + 14} ${x - 14},${y + 9}`} />
+            </g>
+          )}
+          {status === 'NO_RESPONSE' && ear === 'left' && (
+            <g stroke="blue" fill="blue">
+              <line x1={x + 6} y1={y + 6} x2={x + 14} y2={y + 14} strokeWidth={2}/>
+              <polygon points={`${x + 14},${y + 14} ${x + 9},${y + 14} ${x + 14},${y + 9}`} />
+            </g>
+          )}
+          {status === 'CNT' && (
+            <text x={x} y={y + 20} fontSize="12" fill={color} textAnchor="middle" fontWeight="bold">CNT</text>
+          )}
+        </g>
+      );
     });
   };
 
@@ -144,21 +173,9 @@ export default function AudiogramGraph({ patient, transducer, studentThresholds,
       
       const x = getX(f);
       const y = getY(val);
-      let opacity = 0.25;
       
-      if (quizCompleted) {
-        const studentData = studentThresholds[ear][type][f];
-        const hasMaskedThreshold = studentData && typeof studentData === 'object' && studentData.isMasked;
-        
-        if (hasMaskedThreshold) {
-          return null; // hide unmasked symbol
-        }
-        
-        const needsIt = needsMasking[type][ear][f];
-        if (!needsIt) {
-          opacity = 1.0; // "darken" (make fully opaque) if it doesn't need masking
-        }
-      }
+      const needsMasking = maskingNeeds[type][ear][f];
+      const opacity = (!needsMasking && toneQuizPassed) ? 1 : 0.25;
 
       if (ear === 'right' && type === 'ac') return <SymbolRightAcUnmasked key={`u-${ear}-${type}-${f}`} cx={x} cy={y} opacity={opacity} />;
       if (ear === 'left' && type === 'ac') return <SymbolLeftAcUnmasked key={`u-${ear}-${type}-${f}`} cx={x} cy={y} opacity={opacity} />;
@@ -212,12 +229,6 @@ export default function AudiogramGraph({ patient, transducer, studentThresholds,
     <div className="bg-white p-4 rounded-xl border border-secondary shadow-sm w-full flex flex-col items-center">
       <h3 className="font-bold text-lg mb-2">Visual Audiogram</h3>
       
-      {lockedTransducer && (
-        <div className="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded border border-amber-300 mb-3 shadow-sm">
-          Masking Criteria Locked To: {lockedTransducer}
-        </div>
-      )}
-
       <div className="flex justify-between w-full max-w-lg mb-2 px-4 text-sm">
         <div className="flex flex-col gap-1">
           <div className="text-red-600 font-bold bg-red-500/10 px-3 py-1 rounded-md border border-red-500/20 shadow-sm text-center">Right PTA: {rightPta} dB HL</div>
