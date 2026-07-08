@@ -15,7 +15,9 @@ import {
   getIA, 
   checkThresholdResponse, 
   checkWrsResponse,
-  calculateUnmaskedAudiogram
+  calculateUnmaskedAudiogram,
+  evaluateMaskingNeeds,
+  FREQUENCIES
 } from './utils/maskingSimulator';
 
 function App() {
@@ -58,6 +60,33 @@ function App() {
     setResponseValue(null);
     setToneQuizPassed(false);
     setSpeechQuizPassed(false);
+  };
+
+  const handleToneQuizPassed = () => {
+    setToneQuizPassed(true);
+    
+    // Auto-populate thresholds that don't need masking
+    const maskingNeeds = evaluateMaskingNeeds(unmaskedAudiogram, transducer);
+    setStudentThresholds(prev => {
+      const next = { ...prev };
+      ['right', 'left'].forEach(ear => {
+        next[ear] = { ...next[ear] };
+        ['ac', 'bc'].forEach(type => {
+          next[ear][type] = { ...next[ear][type] };
+          FREQUENCIES.forEach(f => {
+            const val = unmaskedAudiogram[ear][type][f];
+            if (val !== undefined && val !== null) {
+              const needsMasking = maskingNeeds[type][ear][f];
+              if (!needsMasking) {
+                // Save it as accepted unmasked threshold
+                next[ear][type][f] = { level: val, isMasked: false, status: 'OK' };
+              }
+            }
+          });
+        });
+      });
+      return next;
+    });
   };
 
   const handleSaveThreshold = (isMasked = false, status = 'OK') => {
@@ -247,7 +276,7 @@ function App() {
                     patient={patient} 
                     transducer={transducer} 
                     unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={() => setToneQuizPassed(true)} 
+                    onQuizPassed={handleToneQuizPassed} 
                   />
                 )}
                 {!speechQuizPassed && (
