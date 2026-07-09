@@ -51,7 +51,7 @@ function App() {
   const [patient, setPatient] = useState(() => generateRandomPatient());
 
   // Compute Unmasked Audiogram Once per patient/transducer change to prevent non-deterministic renders
-  const unmaskedAudiogram = useMemo(() => calculateUnmaskedAudiogram(patient, transducer), [patient, transducer]);
+  const unmaskedAudiogram = useMemo(() => calculateUnmaskedAudiogram(patient, primaryTransducer), [patient, primaryTransducer]);
 
   const handleNewPatient = () => {
     const newTransducer = Math.random() > 0.5 ? 'INSERTS' : 'HEADPHONES';
@@ -111,11 +111,15 @@ function App() {
       }
       return next;
     });
+
+    // Provide visual feedback by clearing the masking history (and plateau messages)
+    setHistory([]);
   };
 
   useEffect(() => {
     if (isPresenting) {
-      const ia = getIA(transducer, patient, testMode, frequency);
+      const toneIA = getIA(transducer, patient, testMode, frequency);
+      const maskerIA = getIA(primaryTransducer, patient, testMode, frequency);
       
       let responded = false;
       let score = null;
@@ -123,16 +127,22 @@ function App() {
       if (testMode === 'TONE') {
         // Pure Tone Logic
         const isRight = testEar === 'right';
-        const teTrueThreshold = isRight ? patient.right.ac[frequency] : patient.left.ac[frequency];
+        const teTrueThreshold = transducer === 'BONE' 
+          ? (isRight ? patient.right.bc[frequency] : patient.left.bc[frequency])
+          : (isRight ? patient.right.ac[frequency] : patient.left.ac[frequency]);
         // Cross hearing goes to the best bone conduction of the NTE
         const nteBestBc = isRight ? patient.left.bc[frequency] : patient.right.bc[frequency];
-        
+        const rawTeBestBc = isRight ? patient.right.bc[frequency] : patient.left.bc[frequency];
+        const teBestBc = rawTeBestBc !== undefined ? rawTeBestBc : teTrueThreshold;
+
         responded = checkThresholdResponse({
           teTrueThreshold,
           nteBestBc,
           tePresentationLevel: toneLevel,
           nteMaskingLevel: maskingLevel,
-          ia
+          toneIA,
+          maskerIA,
+          teBestBc
         });
       } else if (testMode === 'SRT') {
         // SRT Logic (similar to tone but using SRT values)
@@ -140,13 +150,15 @@ function App() {
         const teSrt = isRight ? patient.right.srt : patient.left.srt;
         // For crossover, we approximate by comparing to NTE SRT as the crossover threshold
         const nteSrt = isRight ? patient.left.srt : patient.right.srt;
-        
+
         responded = checkThresholdResponse({
           teTrueThreshold: teSrt,
-          nteBestBc: nteSrt, 
+          nteBestBc: nteSrt,
           tePresentationLevel: toneLevel,
           nteMaskingLevel: maskingLevel,
-          ia
+          toneIA,
+          maskerIA,
+          teBestBc: teSrt
         });
       } else if (testMode === 'WRS') {
         // WRS Logic
@@ -162,7 +174,9 @@ function App() {
           nteBestBc: nteSrt, // Approximation for speech crossover
           tePresentationLevel: toneLevel,
           nteMaskingLevel: maskingLevel,
-          ia
+          toneIA,
+          maskerIA,
+          teBestBc: teSrt
         });
         responded = true; // For WRS, patient always "responds" with a score
       }
@@ -261,42 +275,50 @@ function App() {
               testMode={testMode} 
             />
 
-            <MaskingProfileGraph 
-              history={history}
-              frequency={frequency}
-              testEar={testEar}
-              transducer={transducer}
-              testMode={testMode}
-              patient={patient}
-            />
           </div>
 
           <div className="space-y-8">
             <UnmaskedAudiogram patient={patient} transducer={transducer} unmaskedAudiogram={unmaskedAudiogram} />
             
             {!(toneQuizPassed && speechQuizPassed) ? (
-              <>
+              <div className="flex flex-col xl:flex-row gap-8 items-start">
                 {!toneQuizPassed && (
-                  <MaskingQuiz 
-                    patient={patient} 
-                    transducer={transducer} 
-                    unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={handleToneQuizPassed} 
-                  />
+                  <div className="flex-1 w-full">
+                    <MaskingQuiz
+                      patient={patient}
+                      transducer={transducer}
+                      unmaskedAudiogram={unmaskedAudiogram}
+                      onQuizPassed={handleToneQuizPassed}
+                    />
+                  </div>
                 )}
                 {!speechQuizPassed && (
-                  <SpeechMaskingQuiz 
-                    patient={patient} 
-                    transducer={transducer} 
-                    unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={() => setSpeechQuizPassed(true)} 
-                  />
+                  <div className="flex-1 w-full">
+                    <SpeechMaskingQuiz
+                      patient={patient}
+                      transducer={transducer}
+                      unmaskedAudiogram={unmaskedAudiogram}
+                      onQuizPassed={() => setSpeechQuizPassed(true)}
+                    />
+                  </div>
                 )}
-              </>
+              </div>
             ) : (
-              <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
-                <span className="text-xl">✅</span>
-                <span>Both clinical decision quizzes passed! Proceed with the masking worksheet.</span>
+              <div className="space-y-8">
+                <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
+                  <span className="text-xl">✅</span>
+                  <span>Both clinical decision quizzes passed! Proceed with the masking worksheet.</span>
+                </div>
+                
+                <MaskingProfileGraph
+                  history={history}
+                  frequency={frequency}
+                  testEar={testEar}
+                  transducer={transducer}
+                  maskingTransducer={primaryTransducer}
+                  testMode={testMode}
+                  patient={patient}
+                />
               </div>
             )}
 
