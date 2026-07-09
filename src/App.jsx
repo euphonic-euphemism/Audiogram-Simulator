@@ -220,7 +220,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 font-sans">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         
         <header className="flex flex-col md:flex-row justify-between items-center gap-4 border-b pb-4">
           <div className="space-y-1">
@@ -281,48 +281,43 @@ function App() {
           </div>
 
           <div className="space-y-8">
-            <UnmaskedAudiogram patient={patient} transducer={transducer} unmaskedAudiogram={unmaskedAudiogram} />
             
-            {!(toneQuizPassed && speechQuizPassed) ? (
-              <div className="flex flex-col xl:flex-row gap-8 items-start">
-                <div className="flex-1 w-full">
-                  {!toneQuizPassed ? (
-                    <MaskingQuiz
-                      patient={patient}
-                      transducer={transducer}
-                      unmaskedAudiogram={unmaskedAudiogram}
-                      onQuizPassed={handleToneQuizPassed}
-                    />
-                  ) : (
-                    <MaskingProfileGraph
-                      history={history}
-                      frequency={frequency}
-                      testEar={testEar}
-                      transducer={transducer}
-                      maskingTransducer={primaryTransducer}
-                      testMode={testMode}
-                      patient={patient}
-                    />
-                  )}
+            <div className="flex flex-col xl:flex-row gap-6 items-start">
+              {!toneQuizPassed && (
+                <div className="w-full xl:w-[280px] shrink-0">
+                  <MaskingQuiz
+                    patient={patient}
+                    transducer={transducer}
+                    unmaskedAudiogram={unmaskedAudiogram}
+                    onQuizPassed={handleToneQuizPassed}
+                  />
                 </div>
-                {!speechQuizPassed && (
-                  <div className="flex-1 w-full">
-                    <SpeechMaskingQuiz
-                      patient={patient}
-                      transducer={transducer}
-                      unmaskedAudiogram={unmaskedAudiogram}
-                      onQuizPassed={() => setSpeechQuizPassed(true)}
-                    />
+              )}
+
+              <div className="flex-1 w-full min-w-0">
+                <UnmaskedAudiogram patient={patient} transducer={transducer} unmaskedAudiogram={unmaskedAudiogram} />
+              </div>
+
+              {!speechQuizPassed && (
+                <div className="w-full xl:w-[280px] shrink-0">
+                  <SpeechMaskingQuiz
+                    patient={patient}
+                    transducer={transducer}
+                    unmaskedAudiogram={unmaskedAudiogram}
+                    onQuizPassed={() => setSpeechQuizPassed(true)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {toneQuizPassed && (
+              <div className="space-y-8">
+                {speechQuizPassed && (
+                  <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
+                    <span className="text-xl">✅</span>
+                    <span>Both clinical decision quizzes passed! Proceed with the masking worksheet.</span>
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="space-y-8">
-                <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
-                  <span className="text-xl">✅</span>
-                  <span>Both clinical decision quizzes passed! Proceed with the masking worksheet.</span>
-                </div>
-                
                 <MaskingProfileGraph
                   history={history}
                   frequency={frequency}
