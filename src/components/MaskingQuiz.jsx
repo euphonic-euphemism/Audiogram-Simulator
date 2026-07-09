@@ -152,9 +152,13 @@ export default function MaskingQuiz({ patient, transducer, unmaskedAudiogram, on
   );
 
   return (
-    <div className="bg-card text-card-foreground p-6 rounded-xl border border-blue-500/30 shadow-sm space-y-6">
-      <div>
-        <h3 className="font-bold text-lg m-0 text-blue-600">Clinical Decision: Masking Quiz</h3>
+    <div className="bg-blue-500/10 border border-blue-500/30 p-6 rounded-xl space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="font-bold text-lg m-0 text-blue-600">Clinical Decision: Pure-Tone Audiometry Quiz</h3>
+        <span className="text-sm font-semibold text-blue-600 bg-blue-500/20 px-3 py-1 rounded-full">
+          Pre-test
+        </span>
+      </div>
         <p className="text-sm text-muted-foreground">
           Review the initial unmasked audiogram above. Make sure to evaluate both Air Conduction and Bone Conduction.
         </p>

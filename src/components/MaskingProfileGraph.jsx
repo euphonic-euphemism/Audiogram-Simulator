@@ -20,7 +20,7 @@ const getY = (db) => {
   return MARGIN.top + GRAPH_H - ((db - MIN_DB) / DB_RANGE) * GRAPH_H;
 };
 
-export default function MaskingProfileGraph({ history, frequency, testEar, transducer, testMode, patient }) {
+export default function MaskingProfileGraph({ history, frequency, testEar, transducer, maskingTransducer, testMode, patient }) {
   if (testMode !== 'TONE') {
     return null;
   }
@@ -74,12 +74,16 @@ export default function MaskingProfileGraph({ history, frequency, testEar, trans
       const teBestBc = patient[testEar].bc[frequency] !== undefined ? patient[testEar].bc[frequency] : patient[testEar].ac[frequency];
       
       let ia = 0;
-      if (transducer === 'HEADPHONES') {
-        ia = patient.iaHeadphonesPureTones[frequency] || 40;
+      if (maskingTransducer === 'HEADPHONES') {
+        ia = 40;
+      } else if (maskingTransducer === 'INSERTS') {
+        ia = 55;
+      } else if (transducer === 'HEADPHONES') {
+        ia = 40;
       } else if (transducer === 'INSERTS') {
-        ia = patient.iaInsertsPureTones[frequency] || 55;
-      } else if (transducer === 'BONE') {
-        ia = patient.iaBone || 0;
+        ia = 55;
+      } else {
+        ia = 40; // Fallback
       }
 
       const overmaskingThreshold = teBestBc + ia;
