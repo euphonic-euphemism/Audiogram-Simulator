@@ -239,113 +239,117 @@ function App() {
           </button>
         </header>
 
-        <main className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-8">
-            <AudiogramGraph 
-              patient={patient} 
-              transducer={transducer} 
-              studentThresholds={studentThresholds}
-              unmaskedAudiogram={unmaskedAudiogram} 
-              toneQuizPassed={toneQuizPassed}
-              speechQuizPassed={speechQuizPassed}
-            />
-
-            <AudiometerControl 
-              toneLevel={toneLevel}
-              setToneLevel={setToneLevel}
-              maskingLevel={maskingLevel}
-              setMaskingLevel={setMaskingLevel}
-              transducer={transducer}
-              setTransducer={setTransducer}
-              primaryTransducer={primaryTransducer}
-              testMode={testMode}
-              setTestMode={setTestMode}
-              frequency={frequency}
-              setFrequency={setFrequency}
-              isPresenting={isPresenting}
-              setIsPresenting={setIsPresenting}
-              testEar={testEar}
-              setTestEar={setTestEar}
-              onSaveThreshold={handleSaveThreshold}
-              showFormulas={toneQuizPassed && speechQuizPassed}
-            />
-            
-            <PatientResponse 
-              hasResponded={hasResponded} 
-              responseValue={responseValue}
-              testMode={testMode} 
-            />
-
-            <ClinicalReferenceGuide />
-
-          </div>
-
-          <div className="space-y-8">
-            
-            <div className="flex flex-col xl:flex-row gap-6 items-start">
-              {!toneQuizPassed && (
-                <div className="w-full xl:w-[280px] shrink-0">
-                  <MaskingQuiz
-                    patient={patient}
-                    transducer={transducer}
-                    unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={handleToneQuizPassed}
-                  />
-                </div>
-              )}
-
-              <div className="flex-1 w-full min-w-0">
-                <UnmaskedAudiogram patient={patient} transducer={transducer} unmaskedAudiogram={unmaskedAudiogram} />
-              </div>
-
-              {!speechQuizPassed && (
-                <div className="w-full xl:w-[280px] shrink-0">
-                  <SpeechMaskingQuiz
-                    patient={patient}
-                    transducer={transducer}
-                    unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={() => setSpeechQuizPassed(true)}
-                  />
-                </div>
-              )}
-            </div>
-
-            {toneQuizPassed && (
-              <div className="space-y-8">
-                {speechQuizPassed && (
-                  <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
-                    <span className="text-xl">✅</span>
-                    <span>Both clinical decision quizzes passed! Proceed with the masking worksheet.</span>
-                  </div>
-                )}
-                <MaskingProfileGraph
-                  history={history}
-                  frequency={frequency}
-                  testEar={testEar}
-                  transducer={transducer}
-                  maskingTransducer={primaryTransducer}
-                  testMode={testMode}
+        <main className="space-y-8">
+          
+          {/* Top Row: Quizzes and Unmasked Audiogram */}
+          <div className="flex flex-col xl:flex-row gap-6 items-start">
+            {!toneQuizPassed && (
+              <div className="w-full xl:w-[320px] shrink-0">
+                <MaskingQuiz
                   patient={patient}
+                  transducer={transducer}
+                  unmaskedAudiogram={unmaskedAudiogram}
+                  onQuizPassed={handleToneQuizPassed}
                 />
               </div>
             )}
 
-            <StudentAudiogram thresholds={studentThresholds} />
+            <div className="flex-1 w-full min-w-0">
+              <UnmaskedAudiogram patient={patient} transducer={transducer} unmaskedAudiogram={unmaskedAudiogram} />
+            </div>
 
-            <MaskingWorksheet 
-              history={history}
-              onClear={clearHistory}
-            />
-            
-            <PatientAudiogram patient={patient} transducer={transducer} />
-            
-            {(toneQuizPassed && speechQuizPassed) && (
-              <MaskingAnswerKey 
+            {!speechQuizPassed && (
+              <div className="w-full xl:w-[320px] shrink-0">
+                <SpeechMaskingQuiz
+                  patient={patient}
+                  transducer={transducer}
+                  unmaskedAudiogram={unmaskedAudiogram}
+                  onQuizPassed={() => setSpeechQuizPassed(true)}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-8">
+              <AudiogramGraph 
                 patient={patient} 
                 transducer={transducer} 
+                studentThresholds={studentThresholds}
                 unmaskedAudiogram={unmaskedAudiogram} 
+                toneQuizPassed={toneQuizPassed}
+                speechQuizPassed={speechQuizPassed}
               />
-            )}
+
+              <AudiometerControl 
+                toneLevel={toneLevel}
+                setToneLevel={setToneLevel}
+                maskingLevel={maskingLevel}
+                setMaskingLevel={setMaskingLevel}
+                transducer={transducer}
+                setTransducer={setTransducer}
+                primaryTransducer={primaryTransducer}
+                testMode={testMode}
+                setTestMode={setTestMode}
+                frequency={frequency}
+                setFrequency={setFrequency}
+                isPresenting={isPresenting}
+                setIsPresenting={setIsPresenting}
+                testEar={testEar}
+                setTestEar={setTestEar}
+                onSaveThreshold={handleSaveThreshold}
+                showFormulas={toneQuizPassed && speechQuizPassed}
+              />
+              
+              <PatientResponse 
+                hasResponded={hasResponded} 
+                responseValue={responseValue}
+                testMode={testMode} 
+              />
+
+              <ClinicalReferenceGuide />
+
+            </div>
+
+            <div className="space-y-8">
+              
+              {toneQuizPassed && (
+                <div className="space-y-8">
+                  {speechQuizPassed && (
+                    <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
+                      <span className="text-xl">✅</span>
+                      <span>Both clinical decision quizzes passed! Proceed with the masking worksheet.</span>
+                    </div>
+                  )}
+                  <MaskingProfileGraph
+                    history={history}
+                    frequency={frequency}
+                    testEar={testEar}
+                    transducer={transducer}
+                    maskingTransducer={primaryTransducer}
+                    testMode={testMode}
+                    patient={patient}
+                  />
+                </div>
+              )}
+
+              <StudentAudiogram thresholds={studentThresholds} />
+
+              <MaskingWorksheet 
+                history={history}
+                onClear={clearHistory}
+              />
+              
+              <PatientAudiogram patient={patient} transducer={transducer} />
+              
+              {(toneQuizPassed && speechQuizPassed) && (
+                <MaskingAnswerKey 
+                  patient={patient} 
+                  transducer={transducer} 
+                  unmaskedAudiogram={unmaskedAudiogram} 
+                />
+              )}
+            </div>
           </div>
         </main>
       </div>
