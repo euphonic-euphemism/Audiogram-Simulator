@@ -10,6 +10,7 @@ import StudentAudiogram from './components/StudentAudiogram';
 import AudiogramGraph from './components/AudiogramGraph';
 import MaskingProfileGraph from './components/MaskingProfileGraph';
 import MaskingAnswerKey from './components/MaskingAnswerKey';
+import ClinicalReferenceGuide from './components/ClinicalReferenceGuide';
 import { 
   generateRandomPatient, 
   getIA, 
@@ -274,6 +275,8 @@ function App() {
               responseValue={responseValue}
               testMode={testMode} 
             />
+
+            <ClinicalReferenceGuide />
 
           </div>
 
