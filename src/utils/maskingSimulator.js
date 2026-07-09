@@ -58,43 +58,12 @@ function generateEarConfiguration() {
   const bc = {};
   FREQUENCIES.forEach(f => {
     if (f === 8000) return; // BC is not tested at 8000 Hz
-    
-    if (abgProfile === 'SNHL') {
-      // SNHL: ABG <= 10. BC is close to AC.
-      let gap = rand5(0, 10);
-      bc[f] = Math.max(0, ac[f] - gap);
-    } else if (abgProfile === 'CONDUCTIVE') {
-      // Conductive: BC must be normal (<= 25), and ABG >= 15.
-      if (ac[f] < 15) {
-        // Normal hearing at this freq, no room for ABG
-        let gap = rand5(0, 5);
-        bc[f] = Math.max(0, ac[f] - gap);
-      } else {
-        let maxBc = Math.min(25, ac[f] - 15);
-        if (maxBc < 0) maxBc = 0;
-        // The max ABG is typically ~60 dB. So BC should be at least ac[f] - 60.
-        let minBc = Math.max(0, ac[f] - 60);
-        if (minBc > maxBc) minBc = maxBc;
-        bc[f] = rand5(minBc, maxBc);
-      }
-    } else if (abgProfile === 'MIXED') {
-      // Mixed: BC > 25 AND ABG >= 15
-      if (ac[f] < 45) {
-        // Can't really be mixed if AC < 45 (needs BC >= 30 and ABG >= 15).
-        // Fallback to Conductive or Normal depending on AC.
-        if (ac[f] >= 15) {
-           let maxBc = Math.min(25, ac[f] - 15);
-           bc[f] = rand5(0, maxBc);
-        } else {
-           bc[f] = ac[f];
-        }
-      } else {
-        let minBc = Math.max(30, ac[f] - 60); // Max ABG is 60
-        let maxBc = ac[f] - 15; // Min ABG is 15
-        if (maxBc < minBc) maxBc = minBc;
-        bc[f] = rand5(minBc, maxBc);
-      }
-    }
+    let gap = 0;
+    if (abgProfile === 'CONDUCTIVE') gap = rand5(15, 45);
+    else if (abgProfile === 'MIXED') gap = rand5(10, 30);
+    else gap = rand5(0, 5); 
+
+    bc[f] = Math.max(0, ac[f] - gap);
   });
 
   return { ac, bc };
@@ -160,45 +129,18 @@ export function generateRandomPatient() {
   patient.left.ac = leftConfig.ac;
   patient.left.bc = leftConfig.bc;
 
-  // Generate deterministic unmasked BC offsets to prevent re-render glitches
-  patient.unmaskedBcRight = {};
-  patient.unmaskedBcLeft = {};
-  FREQUENCIES.forEach(freq => {
-    if (freq !== 8000) {
-      const bestBc = Math.min(patient.right.bc[freq], patient.left.bc[freq]);
-      let rightBcMeasured = bestBc;
-      let leftBcMeasured = bestBc;
-      
-      // ~40% chance to have a 5 dB difference due to mastoid placement/calibration
-      if (Math.random() > 0.6) {
-        if (Math.random() > 0.5) rightBcMeasured += 5;
-        else leftBcMeasured += 5;
-      }
-      
-      patient.unmaskedBcRight[freq] = rightBcMeasured;
-      patient.unmaskedBcLeft[freq] = leftBcMeasured;
-    }
-  });
-
   // Calculate PTA (Pure Tone Average at 500, 1000, 2000)
   const rightPTA = (patient.right.ac[500] + patient.right.ac[1000] + patient.right.ac[2000]) / 3;
   const leftPTA = (patient.left.ac[500] + patient.left.ac[1000] + patient.left.ac[2000]) / 3;
 
-  // SRT tends to be slightly better (lower) than PTA, usually within 6 dB, almost always within 12 dB
-  const generateSrt = (pta) => {
-    const rand = Math.random();
-    let shift = 0;
-    if (rand < 0.4) shift = -5; // 40% chance of being 5 dB better
-    else if (rand < 0.7) shift = 0; // 30% chance of being exactly equal (rounded)
-    else if (rand < 0.9) shift = -10; // 20% chance of being 10 dB better
-    else shift = 5; // 10% chance of being 5 dB worse
-    
-    let srt = Math.round(pta / 5) * 5 + shift;
-    return Math.max(0, srt);
-  };
-
-  patient.right.srt = generateSrt(rightPTA);
-  patient.left.srt = generateSrt(leftPTA);
+  // SRT is typically within +/- 5 dB of PTA
+  // We round it to nearest 5
+  patient.right.srt = Math.round(rightPTA / 5) * 5 + (Math.random() > 0.5 ? 5 : -5);
+  patient.left.srt = Math.round(leftPTA / 5) * 5 + (Math.random() > 0.5 ? 5 : -5);
+  
+  // Keep SRT >= 0
+  patient.right.srt = Math.max(0, patient.right.srt);
+  patient.left.srt = Math.max(0, patient.left.srt);
 
   // Max WRS Score (percentage). Randomly assign a true max score (e.g. 60 - 100%)
   patient.right.maxWrs = Math.floor(Math.random() * 9) * 5 + 60; // 60, 65... 100
@@ -235,10 +177,24 @@ export function calculateUnmaskedAudiogram(patient, transducer = 'HEADPHONES') {
     const rightBcCross = patient.right.bc[freq] !== undefined ? patient.right.bc[freq] : patient.right.ac[freq];
     unmasked.left.ac[freq] = Math.min(patient.left.ac[freq], rightBcCross + ia);
 
-    // Unmasked BC is deterministic based on the generated patient properties
+    // Unmasked BC is just the best cochlea, but realistically there can be a 5 dB difference
+    // depending on mastoid placement/calibration. We simulate this by randomly adding 5 dB to one side.
     if (freq !== 8000) {
-      unmasked.right.bc[freq] = patient.unmaskedBcRight[freq];
-      unmasked.left.bc[freq] = patient.unmaskedBcLeft[freq];
+      const bestBc = Math.min(patient.right.bc[freq], patient.left.bc[freq]);
+      let rightBcMeasured = bestBc;
+      let leftBcMeasured = bestBc;
+      
+      // ~40% chance to have a 5 dB difference
+      if (Math.random() > 0.6) {
+        if (Math.random() > 0.5) {
+          rightBcMeasured += 5;
+        } else {
+          leftBcMeasured += 5;
+        }
+      }
+      
+      unmasked.right.bc[freq] = rightBcMeasured;
+      unmasked.left.bc[freq] = leftBcMeasured;
     }
   });
 
@@ -261,31 +217,21 @@ export function getWrsPresentationLevel(data, ear) {
   const ac2000 = data[ear].ac[2000];
   const bc2000 = data[ear].bc[2000] !== undefined ? data[ear].bc[2000] : ac2000;
   
-  // Calculate Air-Bone Gaps
-  const abg500 = data[ear].ac[500] - (data[ear].bc[500] !== undefined ? data[ear].bc[500] : data[ear].ac[500]);
-  const abg1000 = data[ear].ac[1000] - (data[ear].bc[1000] !== undefined ? data[ear].bc[1000] : data[ear].ac[1000]);
-  const abg2000 = ac2000 - bc2000;
-  
-  const hasConductiveComponent = Math.max(abg500, abg1000, abg2000) >= 15;
-  const isNormal = ac2000 <= 25 && srt <= 25;
+  // Normal or Conductive logic
+  const isNormal = ac2000 <= 25;
+  const isConductive = bc2000 <= 25 && ac2000 > 25;
   
   let level;
-  if (isNormal || hasConductiveComponent) {
-    // Normal, Conductive, or Mixed losses
+  if (isNormal || isConductive) {
     level = srt + 40;
   } else {
-    // Pure SNHL: 2000 Hz rule (Guthrie & Mackersie)
+    // Sensorineural or Mixed (BC > 25)
     if (ac2000 <= 50) level = ac2000 + 25;
     else if (ac2000 === 55) level = ac2000 + 20;
     else if (ac2000 >= 60 && ac2000 <= 65) level = ac2000 + 15;
     else if (ac2000 >= 70 && ac2000 <= 75) level = ac2000 + 10;
     else if (ac2000 >= 80) level = ac2000 + 5;
     else level = srt + 40; // Fallback
-    
-    // Ensure we don't present too close to or below the SRT for reverse-slope losses
-    if (level < srt + 15) {
-      level = srt + 15;
-    }
   }
   
   return Math.min(105, level);
@@ -319,31 +265,25 @@ export function getIA(transducer, patient, mode, freq = 1000) {
  */
 export function checkThresholdResponse({
   teTrueThreshold,
-  teBestBc,
   nteBestBc,
   tePresentationLevel,
   nteMaskingLevel,
-  ia,
-  maskingIA
+  toneIA,
+  maskerIA,
+  teBestBc
 }) {
-  const mIA = maskingIA !== undefined ? maskingIA : (ia === 0 ? 40 : ia);
-  const teBc = teBestBc !== undefined ? teBestBc : teTrueThreshold;
-
-  let effectiveTeThreshold = teTrueThreshold;
-  if (nteMaskingLevel > 0) {
-    const crossoverMaskingToTe = nteMaskingLevel - mIA;
-    if (crossoverMaskingToTe >= teBc) {
-      if (crossoverMaskingToTe > effectiveTeThreshold) {
-         effectiveTeThreshold = crossoverMaskingToTe;
-      }
-    }
-  }
+  // Crossover of masker to TE cochlea
+  const crossoverMaskerToTE = nteMaskingLevel - maskerIA;
+  
+  // The threshold of the TE is shifted if the crossover masker exceeds its BC threshold
+  const thresholdShift = Math.max(0, crossoverMaskerToTE - teBestBc);
+  const maskedTeThreshold = teTrueThreshold + thresholdShift;
 
   // Can they hear it in the Test Ear?
-  const hearsInTE = tePresentationLevel >= effectiveTeThreshold;
+  const hearsInTE = tePresentationLevel >= maskedTeThreshold;
 
   // Crossover reaches the NTE cochlea
-  const crossoverLevel = tePresentationLevel - ia;
+  const crossoverLevel = tePresentationLevel - toneIA;
   
   // Can they hear it in the Non-Test Ear?
   // They hear it if crossover >= their NTE BC threshold AND crossover > masking noise
@@ -359,25 +299,14 @@ export function checkThresholdResponse({
 export function checkWrsResponse({
   teSrt,
   teMaxWrs,
-  nteSrt,
-  nteBestBc, 
+  nteSrt, // For speech crossover, we often compare to NTE best BC or NTE SRT depending on the exact clinical rules, let's use NTE SRT for speech crossover detection threshold for simplicity, or NTE best BC for pure sensory response.
+  nteBestBc,
   tePresentationLevel,
   nteMaskingLevel,
-  ia,
-  maskingIA
+  toneIA,
+  maskerIA,
+  teBestBc
 }) {
-  const mIA = maskingIA !== undefined ? maskingIA : ia;
-
-  let effectiveTeSrt = teSrt;
-  if (nteMaskingLevel > 0) {
-    const crossoverMaskingToTe = nteMaskingLevel - mIA;
-    if (crossoverMaskingToTe >= teSrt) { // approximating TE cochlea for speech as TE SRT
-      if (crossoverMaskingToTe > effectiveTeSrt) {
-        effectiveTeSrt = crossoverMaskingToTe;
-      }
-    }
-  }
-
   // A sigmoidal (logistic) model for WRS based on presentation level above SRT
   const calculateScore = (presentationLevel, srt, maxWrs) => {
     const sensationLevel = presentationLevel - srt;
@@ -391,12 +320,18 @@ export function checkWrsResponse({
     return Math.round(score);
   };
 
-  // Test Ear Contribution
-  const teScore = calculateScore(tePresentationLevel, effectiveTeSrt, teMaxWrs);
+  // Crossover of masker to TE cochlea
+  const crossoverMaskerToTE = nteMaskingLevel - maskerIA;
+  const thresholdShift = Math.max(0, crossoverMaskerToTE - teBestBc);
+  const maskedTeSrt = teSrt + thresholdShift;
 
+  // TE score calculation
+  const teScore = calculateScore(tePresentationLevel, maskedTeSrt, teMaxWrs);
+
+  // NTE speech threshold is approximated as NTE SRT
   // Non-Test Ear Contribution (Crossover)
   // Masking reduces the effective crossover level
-  const crossoverLevel = tePresentationLevel - ia;
+  const crossoverLevel = tePresentationLevel - toneIA;
   // If masking is present, the effective signal reaching the NTE is reduced.
   // We approximate the masked crossover level as crossoverLevel - effective masking.
   // Effective masking roughly shifts the NTE threshold by the masking amount (if masking > threshold).
@@ -506,7 +441,7 @@ export function evaluateMaskingNeeds(unmasked, transducer) {
  * SRT: Mask if TE(SRT) - NTE(Best BC) >= IA OR TE(SRT) - NTE(SRT) >= IA
  * WRS: Mask if TE(Presentation Level) - NTE(Best BC) >= IA OR TE(Presentation Level) - NTE(SRT) >= IA
  */
-export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', unmasked, studentThresholds = null) {
+export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', unmasked) {
   const iaThreshold = transducer === 'HEADPHONES' ? 40 : (transducer === 'INSERTS' ? 55 : 0);
   
   const needsMasking = {
@@ -518,49 +453,32 @@ export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', u
     unmasked = calculateUnmaskedAudiogram(patient, transducer);
   }
 
-  // Find best effective BC in speech frequencies (250 - 4000) for the given ear
-  const getBestEffectiveBc = (ear) => {
+  // Find best unmasked BC in speech frequencies (250 - 4000) for the given ear
+  const getBestUnmaskedBc = (ear) => {
     let best = 120;
     [250, 500, 1000, 2000, 4000].forEach(f => {
-      let bcVal = unmasked[ear].bc[f];
-      
-      // If student has saved a masked BC threshold, use it instead!
-      if (studentThresholds && studentThresholds[ear] && studentThresholds[ear].bc && studentThresholds[ear].bc[f] !== undefined) {
-        const studentVal = studentThresholds[ear].bc[f];
-        bcVal = typeof studentVal === 'object' ? studentVal.level : studentVal;
-      }
-
-      if (bcVal !== undefined && bcVal < best) {
-        best = bcVal;
+      if (unmasked[ear].bc[f] !== undefined && unmasked[ear].bc[f] < best) {
+        best = unmasked[ear].bc[f];
       }
     });
-    return best < 120 ? best : getEffectiveSrt(ear);
+    // Fallback to unmasked SRT or AC if BC is somehow missing entirely, though rare
+    return best < 120 ? best : unmasked[ear].srt;
   };
   
-  const getEffectiveSrt = (ear) => {
-    if (studentThresholds && studentThresholds[ear] && studentThresholds[ear].srt !== null) {
-      return studentThresholds[ear].srt.level;
-    }
-    return unmasked[ear].srt;
-  };
-  
-  const rightBestBc = getBestEffectiveBc('right');
-  const leftBestBc = getBestEffectiveBc('left');
-  
-  const rightEffectiveSrt = getEffectiveSrt('right');
-  const leftEffectiveSrt = getEffectiveSrt('left');
+  const rightBestBc = getBestUnmaskedBc('right');
+  const leftBestBc = getBestUnmaskedBc('left');
 
-  // SRT Masking: Compare against both NTE Effective SRT and NTE Effective Best BC
-  needsMasking.srt.right = (unmasked.right.srt - leftBestBc) >= iaThreshold || (unmasked.right.srt - leftEffectiveSrt) >= iaThreshold;
-  needsMasking.srt.left = (unmasked.left.srt - rightBestBc) >= iaThreshold || (unmasked.left.srt - rightEffectiveSrt) >= iaThreshold;
+  // SRT Masking: Compare against both NTE Unmasked SRT and NTE Unmasked Best BC
+  needsMasking.srt.right = (unmasked.right.srt - leftBestBc) >= iaThreshold || (unmasked.right.srt - unmasked.left.srt) >= iaThreshold;
+  needsMasking.srt.left = (unmasked.left.srt - rightBestBc) >= iaThreshold || (unmasked.left.srt - unmasked.right.srt) >= iaThreshold;
 
   // WRS Masking
-  // WRS is evaluated against the NTE Effective Best BC and NTE Effective SRT
+  // WRS is evaluated against the NTE Unmasked Best BC and NTE Unmasked SRT
   const rightWrsLevel = unmasked.right.wrsLevel;
   const leftWrsLevel = unmasked.left.wrsLevel;
 
-  needsMasking.wrs.right = (rightWrsLevel - leftBestBc) >= iaThreshold || (rightWrsLevel - leftEffectiveSrt) >= iaThreshold;
-  needsMasking.wrs.left = (leftWrsLevel - rightBestBc) >= iaThreshold || (leftWrsLevel - rightEffectiveSrt) >= iaThreshold;
+  needsMasking.wrs.right = (rightWrsLevel - leftBestBc) >= iaThreshold || (rightWrsLevel - unmasked.left.srt) >= iaThreshold;
+  needsMasking.wrs.left = (leftWrsLevel - rightBestBc) >= iaThreshold || (leftWrsLevel - unmasked.right.srt) >= iaThreshold;
 
   return needsMasking;
 }
