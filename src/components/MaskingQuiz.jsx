@@ -159,6 +159,7 @@ export default function MaskingQuiz({ patient, transducer, unmaskedAudiogram, on
           Pre-test
         </span>
       </div>
+      <div>
         <p className="text-sm text-muted-foreground">
           Review the initial unmasked audiogram above. Make sure to evaluate both Air Conduction and Bone Conduction.
         </p>
