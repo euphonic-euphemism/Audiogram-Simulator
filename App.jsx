@@ -275,43 +275,50 @@ function App() {
               testMode={testMode} 
             />
 
-            <MaskingProfileGraph
-              history={history}
-              frequency={frequency}
-              testEar={testEar}
-              transducer={transducer}
-              maskingTransducer={primaryTransducer}
-              testMode={testMode}
-              patient={patient}
-            />
           </div>
 
           <div className="space-y-8">
             <UnmaskedAudiogram patient={patient} transducer={transducer} unmaskedAudiogram={unmaskedAudiogram} />
             
             {!(toneQuizPassed && speechQuizPassed) ? (
-              <>
+              <div className="flex flex-col xl:flex-row gap-8 items-start">
                 {!toneQuizPassed && (
-                  <MaskingQuiz 
-                    patient={patient} 
-                    transducer={transducer} 
-                    unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={handleToneQuizPassed} 
-                  />
+                  <div className="flex-1 w-full">
+                    <MaskingQuiz
+                      patient={patient}
+                      transducer={transducer}
+                      unmaskedAudiogram={unmaskedAudiogram}
+                      onQuizPassed={handleToneQuizPassed}
+                    />
+                  </div>
                 )}
                 {!speechQuizPassed && (
-                  <SpeechMaskingQuiz 
-                    patient={patient} 
-                    transducer={transducer} 
-                    unmaskedAudiogram={unmaskedAudiogram}
-                    onQuizPassed={() => setSpeechQuizPassed(true)} 
-                  />
+                  <div className="flex-1 w-full">
+                    <SpeechMaskingQuiz
+                      patient={patient}
+                      transducer={transducer}
+                      unmaskedAudiogram={unmaskedAudiogram}
+                      onQuizPassed={() => setSpeechQuizPassed(true)}
+                    />
+                  </div>
                 )}
-              </>
+              </div>
             ) : (
-              <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
-                <span className="text-xl">✅</span>
-                <span>Both clinical decision quizzes passed! Proceed with the masking worksheet.</span>
+              <div className="space-y-8">
+                <div className="bg-green-500/10 border border-green-500/30 text-green-700 p-4 rounded-xl font-bold flex items-center gap-3">
+                  <span className="text-xl">✅</span>
+                  <span>Both clinical decision quizzes passed! Proceed with the masking worksheet.</span>
+                </div>
+                
+                <MaskingProfileGraph
+                  history={history}
+                  frequency={frequency}
+                  testEar={testEar}
+                  transducer={transducer}
+                  maskingTransducer={primaryTransducer}
+                  testMode={testMode}
+                  patient={patient}
+                />
               </div>
             )}
 
