@@ -282,16 +282,26 @@ function App() {
             
             {!(toneQuizPassed && speechQuizPassed) ? (
               <div className="flex flex-col xl:flex-row gap-8 items-start">
-                {!toneQuizPassed && (
-                  <div className="flex-1 w-full">
+                <div className="flex-1 w-full">
+                  {!toneQuizPassed ? (
                     <MaskingQuiz
                       patient={patient}
                       transducer={transducer}
                       unmaskedAudiogram={unmaskedAudiogram}
                       onQuizPassed={handleToneQuizPassed}
                     />
-                  </div>
-                )}
+                  ) : (
+                    <MaskingProfileGraph
+                      history={history}
+                      frequency={frequency}
+                      testEar={testEar}
+                      transducer={transducer}
+                      maskingTransducer={primaryTransducer}
+                      testMode={testMode}
+                      patient={patient}
+                    />
+                  )}
+                </div>
                 {!speechQuizPassed && (
                   <div className="flex-1 w-full">
                     <SpeechMaskingQuiz
