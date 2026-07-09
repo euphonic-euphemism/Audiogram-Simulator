@@ -150,7 +150,6 @@ export default function MaskingProfileGraph({ history, frequency, testEar, trans
       />
     );
   };
-
   const renderPoints = () => {
     return relevantHistory.map((h, i) => {
       const x = getX(h.maskingLevel);
