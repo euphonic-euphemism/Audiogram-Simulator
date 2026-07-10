@@ -118,7 +118,7 @@ export default function SpeechMaskingQuiz({ patient, transducer, unmaskedAudiogr
       <div>
         <h3 className="font-bold text-lg m-0 text-orange-600">Clinical Decision: Speech Masking Quiz</h3>
         <p className="text-sm text-muted-foreground">
-          Review the initial unmasked SRTs above. Note: The rules for speech masking use the Best Bone Conduction threshold in the non-test ear across all speech frequencies (250-4000 Hz) OR the NTE SRT.
+          Review the initial unmasked SRTs above. Note: The rules for SRT masking use the Best Bone Conduction threshold in the non-test ear at 500, 1000, and 2000 Hz (or the NTE SRT). For WRS, the Best BC across all speech frequencies (250-4000 Hz) is used.
         </p>
         <div className="mt-3 p-3 bg-orange-500/10 rounded-lg inline-block border border-orange-500/20">
           <p className="text-sm font-semibold text-orange-800 m-0">
