@@ -354,11 +354,9 @@ export function checkWrsResponse({
  * Checks if a plateau has been reached based on history.
  */
 export function checkPlateau(history) {
-  if (history.length < 4) return false;
-
   const byTone = history.reduce((acc, point) => {
-    // Only check plateau for Threshold responses (boolean)
-    if (typeof point.response === 'boolean') {
+    // Only positive threshold responses contribute to a plateau
+    if (point.response === true) {
       if (!acc[point.toneLevel]) acc[point.toneLevel] = [];
       acc[point.toneLevel].push(point.maskingLevel);
     }
@@ -367,7 +365,7 @@ export function checkPlateau(history) {
 
   for (const toneLevel in byTone) {
     const masks = byTone[toneLevel].sort((a, b) => a - b);
-    if (masks.length >= 4) {
+    if (masks.length >= 2) {
       const diff = masks[masks.length - 1] - masks[0];
       if (diff >= 15) {
         return true;
