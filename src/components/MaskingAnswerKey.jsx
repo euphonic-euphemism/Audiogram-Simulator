@@ -43,12 +43,22 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
           let reqs = [];
           if (maskingNeeds.ac.right[f]) reqs.push(`Right AC (IML: ${unmaskedAudiogram.left.ac[f] + 10} dB EM)`);
           if (maskingNeeds.bc.right[f]) {
-            const oe = f <= 500 ? 15 : (f === 1000 ? 10 : 0);
+            let oe = 0;
+            if (transducer === 'HEADPHONES') {
+              oe = f <= 500 ? 15 : (f === 1000 ? 10 : 0);
+            } else if (transducer === 'INSERTS') {
+              oe = f <= 500 ? 10 : 0;
+            }
             reqs.push(`Right BC (IML: ${unmaskedAudiogram.left.ac[f] + oe + 10} dB EM, includes ${oe}dB OE)`);
           }
           if (maskingNeeds.ac.left[f]) reqs.push(`Left AC (IML: ${unmaskedAudiogram.right.ac[f] + 10} dB EM)`);
           if (maskingNeeds.bc.left[f]) {
-            const oe = f <= 500 ? 15 : (f === 1000 ? 10 : 0);
+            let oe = 0;
+            if (transducer === 'HEADPHONES') {
+              oe = f <= 500 ? 15 : (f === 1000 ? 10 : 0);
+            } else if (transducer === 'INSERTS') {
+              oe = f <= 500 ? 10 : 0;
+            }
             reqs.push(`Left BC (IML: ${unmaskedAudiogram.right.ac[f] + oe + 10} dB EM, includes ${oe}dB OE)`);
           }
 
@@ -60,8 +70,8 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
         
         {speechMaskingNeeds.srt.right && <li><strong>SRT:</strong> Right Ear (Initial Masking Level: {Math.max(-10, imlSrtRight)} dB EM)</li>}
         {speechMaskingNeeds.srt.left && <li><strong>SRT:</strong> Left Ear (Initial Masking Level: {Math.max(-10, imlSrtLeft)} dB EM)</li>}
-        {speechMaskingNeeds.wrs.right && <li><strong>WRS:</strong> Right Ear (Initial Masking Level: {Math.max(-10, imlWrsRight)} dB EM)</li>}
-        {speechMaskingNeeds.wrs.left && <li><strong>WRS:</strong> Left Ear (Initial Masking Level: {Math.max(-10, imlWrsLeft)} dB EM)</li>}
+        {speechMaskingNeeds.wrs.right && <li><strong>WRS:</strong> Right Ear (Initial Masking Level: {Math.max(-10, unmaskedAudiogram.right.wrsLevel - ia + leftABG)} dB EM)</li>}
+        {speechMaskingNeeds.wrs.left && <li><strong>WRS:</strong> Left Ear (Initial Masking Level: {Math.max(-10, unmaskedAudiogram.left.wrsLevel - ia + rightABG)} dB EM)</li>}
         
         {!anyMaskingNeeded && (
           <li>No masking required for any test.</li>
