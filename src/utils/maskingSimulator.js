@@ -451,10 +451,10 @@ export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', u
     unmasked = calculateUnmaskedAudiogram(patient, transducer);
   }
 
-  // Find best unmasked BC in speech frequencies (250 - 4000) for the given ear
-  const getBestUnmaskedBc = (ear) => {
+  // Find best unmasked BC in specific speech frequencies for the given ear
+  const getBestUnmaskedBc = (ear, freqs) => {
     let best = 120;
-    [250, 500, 1000, 2000, 4000].forEach(f => {
+    freqs.forEach(f => {
       if (unmasked[ear].bc[f] !== undefined && unmasked[ear].bc[f] < best) {
         best = unmasked[ear].bc[f];
       }
@@ -463,20 +463,23 @@ export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', u
     return best < 120 ? best : unmasked[ear].srt;
   };
   
-  const rightBestBc = getBestUnmaskedBc('right');
-  const leftBestBc = getBestUnmaskedBc('left');
+  const rightBestBcSrt = getBestUnmaskedBc('right', [500, 1000, 2000]);
+  const leftBestBcSrt = getBestUnmaskedBc('left', [500, 1000, 2000]);
 
-  // SRT Masking: Compare against both NTE Unmasked SRT and NTE Unmasked Best BC
-  needsMasking.srt.right = (unmasked.right.srt - leftBestBc) >= iaThreshold || (unmasked.right.srt - unmasked.left.srt) >= iaThreshold;
-  needsMasking.srt.left = (unmasked.left.srt - rightBestBc) >= iaThreshold || (unmasked.left.srt - unmasked.right.srt) >= iaThreshold;
+  const rightBestBcWrs = getBestUnmaskedBc('right', [250, 500, 1000, 2000, 4000]);
+  const leftBestBcWrs = getBestUnmaskedBc('left', [250, 500, 1000, 2000, 4000]);
+
+  // SRT Masking: Compare against both NTE Unmasked SRT and NTE Unmasked Best BC (at 500, 1000, 2000 Hz)
+  needsMasking.srt.right = (unmasked.right.srt - leftBestBcSrt) >= iaThreshold || (unmasked.right.srt - unmasked.left.srt) >= iaThreshold;
+  needsMasking.srt.left = (unmasked.left.srt - rightBestBcSrt) >= iaThreshold || (unmasked.left.srt - unmasked.right.srt) >= iaThreshold;
 
   // WRS Masking
   // WRS is evaluated against the NTE Unmasked Best BC and NTE Unmasked SRT
   const rightWrsLevel = unmasked.right.wrsLevel;
   const leftWrsLevel = unmasked.left.wrsLevel;
 
-  needsMasking.wrs.right = (rightWrsLevel - leftBestBc) >= iaThreshold || (rightWrsLevel - unmasked.left.srt) >= iaThreshold;
-  needsMasking.wrs.left = (leftWrsLevel - rightBestBc) >= iaThreshold || (leftWrsLevel - unmasked.right.srt) >= iaThreshold;
+  needsMasking.wrs.right = (rightWrsLevel - leftBestBcWrs) >= iaThreshold || (rightWrsLevel - unmasked.left.srt) >= iaThreshold;
+  needsMasking.wrs.left = (leftWrsLevel - rightBestBcWrs) >= iaThreshold || (leftWrsLevel - unmasked.right.srt) >= iaThreshold;
 
   return needsMasking;
 }
