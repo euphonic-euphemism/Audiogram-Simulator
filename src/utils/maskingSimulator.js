@@ -73,16 +73,19 @@ function generateEarConfiguration() {
  * Generates a fully randomized virtual patient.
  */
 export function generateRandomPatient() {
-  const tHeadphones = Math.random(); // interpolation factor for headphones IA trend
-  const minIAHeadphones = { 250: 45, 500: 45, 1000: 30, 2000: 40, 4000: 40, 8000: 40 };
-  const maxIAHeadphones = { 250: 80, 500: 80, 1000: 85, 2000: 80, 4000: 90, 8000: 90 };
+  // We use a skewed random distribution to push true IA closer to the clinical averages, 
+  // rather than frequently generating "minimum IA" patients which causes overly frequent overmasking.
+  // Math.pow(Math.random(), 0.7) skews the distribution higher.
+  const tHeadphones = Math.pow(Math.random(), 0.7); 
+  const minIAHeadphones = { 250: 45, 500: 50, 1000: 55, 2000: 55, 4000: 60, 8000: 60 };
+  const maxIAHeadphones = { 250: 75, 500: 75, 1000: 80, 2000: 80, 4000: 85, 8000: 85 };
 
-  const tInserts = Math.random(); // interpolation factor for inserts IA trend
-  const minIAInserts = { 250: 64, 500: 50, 1000: 56, 2000: 54, 4000: 64, 8000: 54 };
-  const maxIAInserts = { 250: 95, 500: 94, 1000: 92, 2000: 72, 4000: 88, 8000: 80 };
+  const tInserts = Math.pow(Math.random(), 0.7); 
+  const minIAInserts = { 250: 75, 500: 70, 1000: 65, 2000: 60, 4000: 65, 8000: 65 };
+  const maxIAInserts = { 250: 100, 500: 95, 1000: 90, 2000: 80, 4000: 90, 8000: 85 };
 
-  const hpSpeech = Math.floor(Math.random() * (60 - 45 + 1)) + 45;
-  const inSpeech = Math.floor(Math.random() * (75 - 60 + 1)) + 60;
+  const hpSpeech = Math.floor(Math.random() * (70 - 55 + 1)) + 55; // 55 to 70 dB
+  const inSpeech = Math.floor(Math.random() * (85 - 65 + 1)) + 65; // 65 to 85 dB
 
   const patient = {
     iaHeadphonesPureTones: {},
@@ -159,6 +162,8 @@ export function calculateUnmaskedAudiogram(patient, transducer = 'HEADPHONES') {
     left: { ac: {}, bc: {}, srt: null, wrsLevel: null }
   };
 
+  const unmaskedBcTemp = {};
+
   FREQUENCIES.forEach(freq => {
     let ia;
     if (transducer === 'HEADPHONES') {
@@ -177,25 +182,34 @@ export function calculateUnmaskedAudiogram(patient, transducer = 'HEADPHONES') {
     const rightBcCross = patient.right.bc[freq] !== undefined ? patient.right.bc[freq] : patient.right.ac[freq];
     unmasked.left.ac[freq] = Math.min(patient.left.ac[freq], rightBcCross + ia);
 
-    // Unmasked BC is just the best cochlea, but realistically there can be a 5 dB difference
-    // depending on mastoid placement/calibration. We simulate this by randomly adding 5 dB to one side.
+    // Unmasked BC is theoretically the best cochlea.
     if (freq !== 8000) {
-      const bestBc = Math.min(patient.right.bc[freq], patient.left.bc[freq]);
-      let rightBcMeasured = bestBc;
-      let leftBcMeasured = bestBc;
-      
-      // ~40% chance to have a 5 dB difference
-      if (Math.random() > 0.6) {
-        if (Math.random() > 0.5) {
-          rightBcMeasured += 5;
-        } else {
-          leftBcMeasured += 5;
-        }
-      }
-      
-      unmasked.right.bc[freq] = rightBcMeasured;
-      unmasked.left.bc[freq] = leftBcMeasured;
+      unmaskedBcTemp[freq] = Math.min(patient.right.bc[freq], patient.left.bc[freq]);
     }
+  });
+
+  // Clinically, unmasked BC is usually only plotted on the better hearing ear, 
+  // or at random if the ears are symmetric. We'll sum the true BC thresholds to find the better ear.
+  let rightSum = 0;
+  let leftSum = 0;
+  [250, 500, 1000, 2000, 4000].forEach(f => {
+    rightSum += patient.right.bc[f];
+    leftSum += patient.left.bc[f];
+  });
+
+  let bcPlacementEar;
+  if (rightSum < leftSum - 15) {
+    bcPlacementEar = 'right';
+  } else if (leftSum < rightSum - 15) {
+    bcPlacementEar = 'left';
+  } else {
+    // If they are relatively symmetric (within 15 dB total across 5 frequencies), pick at random
+    bcPlacementEar = Math.random() > 0.5 ? 'right' : 'left';
+  }
+
+  // Assign the unmasked BC only to the chosen ear
+  [250, 500, 1000, 2000, 4000].forEach(f => {
+    unmasked[bcPlacementEar].bc[f] = unmaskedBcTemp[f];
   });
 
   const iaSpeech = transducer === 'HEADPHONES' ? patient.iaHeadphonesSpeech : (transducer === 'INSERTS' ? patient.iaInsertsSpeech : 0);
@@ -396,35 +410,33 @@ export function evaluateMaskingNeeds(unmasked, transducer) {
   const iaThreshold = transducer === 'HEADPHONES' ? 40 : 55;
 
   FREQUENCIES.forEach(freq => {
+    // Get the best unmasked BC at this frequency, since it might only be recorded on one ear
+    const rightUnmaskedBc = unmasked.right.bc[freq] !== undefined ? unmasked.right.bc[freq] : Infinity;
+    const leftUnmaskedBc = unmasked.left.bc[freq] !== undefined ? unmasked.left.bc[freq] : Infinity;
+    let bestUnmaskedBc = Math.min(rightUnmaskedBc, leftUnmaskedBc);
+
     // AC Masking Evaluation
     // Check if Right Ear needs masking
     const rightAc = unmasked.right.ac[freq];
     const leftAc = unmasked.left.ac[freq];
-    const leftBc = unmasked.left.bc[freq] !== undefined ? unmasked.left.bc[freq] : leftAc;
-    needsMasking.ac.right[freq] = (rightAc - leftAc >= iaThreshold) || (rightAc - leftBc >= iaThreshold);
+    
+    // For AC masking, compare TE AC against NTE AC and the best unmasked BC
+    const effectiveLeftBc = bestUnmaskedBc !== Infinity ? bestUnmaskedBc : leftAc;
+    needsMasking.ac.right[freq] = (rightAc - leftAc >= iaThreshold) || (rightAc - effectiveLeftBc >= iaThreshold);
 
     // Check if Left Ear needs masking
-    const leftAcVal = unmasked.left.ac[freq];
-    const rightAcVal = unmasked.right.ac[freq];
-    const rightBcVal = unmasked.right.bc[freq] !== undefined ? unmasked.right.bc[freq] : rightAcVal;
-    needsMasking.ac.left[freq] = (leftAcVal - rightAcVal >= iaThreshold) || (leftAcVal - rightBcVal >= iaThreshold);
+    const effectiveRightBc = bestUnmaskedBc !== Infinity ? bestUnmaskedBc : rightAc;
+    needsMasking.ac.left[freq] = (leftAc - rightAc >= iaThreshold) || (leftAc - effectiveRightBc >= iaThreshold);
 
     // BC Masking Evaluation
     // Rule: ABG > 10 dB (i.e. >= 15 dB) in the Test Ear
-    // Use the unmasked BC of the specific ear being tested to calculate the ABG
+    // Clinically, if the TE AC is > 10 dB worse than the best unmasked BC, BC masking is required.
     if (freq !== 8000) {
-      const rightUnmaskedBc = unmasked.right.bc[freq] !== undefined ? unmasked.right.bc[freq] : Infinity;
-      const leftUnmaskedBc = unmasked.left.bc[freq] !== undefined ? unmasked.left.bc[freq] : Infinity;
-
-      if (rightUnmaskedBc !== Infinity) {
-        needsMasking.bc.right[freq] = (rightAc - rightUnmaskedBc >= 15);
+      if (bestUnmaskedBc !== Infinity) {
+        needsMasking.bc.right[freq] = (rightAc - bestUnmaskedBc >= 15);
+        needsMasking.bc.left[freq] = (leftAc - bestUnmaskedBc >= 15);
       } else {
         needsMasking.bc.right[freq] = false;
-      }
-
-      if (leftUnmaskedBc !== Infinity) {
-        needsMasking.bc.left[freq] = (leftAcVal - leftUnmaskedBc >= 15);
-      } else {
         needsMasking.bc.left[freq] = false;
       }
     }
