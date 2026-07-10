@@ -15,9 +15,15 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
     let max = 0;
     [500, 1000, 2000, 4000].forEach(f => {
       const ac = unmaskedAudiogram[ear].ac[f];
-      const bc = unmaskedAudiogram[ear].bc[f];
-      if (ac !== undefined && bc !== undefined) {
-        const abg = ac - bc;
+      const rightBc = unmaskedAudiogram.right.bc[f] !== undefined ? unmaskedAudiogram.right.bc[f] : Infinity;
+      const leftBc = unmaskedAudiogram.left.bc[f] !== undefined ? unmaskedAudiogram.left.bc[f] : Infinity;
+      let bestBc = Math.min(rightBc, leftBc);
+      
+      // If no BC is measured, fallback to AC (meaning 0 ABG)
+      if (bestBc === Infinity) bestBc = ac;
+
+      if (ac !== undefined) {
+        const abg = ac - bestBc;
         if (abg > max) max = abg;
       }
     });
