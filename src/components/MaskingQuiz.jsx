@@ -99,54 +99,48 @@ export default function MaskingQuiz({ patient, transducer, unmaskedAudiogram, on
     }
   };
 
-  const renderSelectionTable = (type) => (
-    <div className="pt-4 border-t border-secondary animate-in fade-in slide-in-from-top-2">
-      <p className="text-sm font-semibold mb-3">Select the specific ears and frequencies where the Test Ear (TE) needs {type.toUpperCase()} masking:</p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-center text-sm">
-          <thead className="bg-secondary/50 text-muted-foreground text-xs uppercase">
-            <tr>
-              <th className="px-2 py-2 text-left rounded-tl-lg">Test Ear</th>
-              {FREQUENCIES.map(f => <th key={f} className="px-2 py-2">{f}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="border-b border-secondary/50">
-              <td className="px-2 py-3 text-left font-bold text-red-500">Right</td>
-              {FREQUENCIES.map(f => (
-                <td key={f} className="px-2 py-3">
-                  {type === 'bc' && f === 8000 ? (
-                    <span className="text-muted-foreground">-</span>
-                  ) : (
-                    <input 
-                      type="checkbox" 
-                      className="w-5 h-5 accent-red-500 cursor-pointer"
-                      checked={!!selectedMasking[type].right[f]}
-                      onChange={() => toggleSelection(type, 'right', f)}
-                    />
-                  )}
-                </td>
-              ))}
-            </tr>
-            <tr>
-              <td className="px-2 py-3 text-left font-bold text-blue-500">Left</td>
-              {FREQUENCIES.map(f => (
-                <td key={f} className="px-2 py-3">
-                  {type === 'bc' && f === 8000 ? (
-                    <span className="text-muted-foreground">-</span>
-                  ) : (
-                    <input 
-                      type="checkbox" 
-                      className="w-5 h-5 accent-blue-500 cursor-pointer"
-                      checked={!!selectedMasking[type].left[f]}
-                      onChange={() => toggleSelection(type, 'left', f)}
-                    />
-                  )}
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
+  const renderSelectionCheckboxes = (type) => (
+    <div className="pt-4 border-t border-secondary animate-in fade-in slide-in-from-top-2 space-y-3">
+      <p className="text-sm font-semibold mb-2">Select the specific ears and frequencies where the Test Ear (TE) needs {type.toUpperCase()} masking:</p>
+      
+      <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+        <h4 className="font-bold text-red-600 mb-2 text-sm">Right Ear</h4>
+        <div className="flex flex-wrap gap-2">
+          {FREQUENCIES.map(f => {
+            if (type === 'bc' && f === 8000) return null;
+            return (
+              <label key={f} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded shadow-sm text-xs font-semibold cursor-pointer border hover:border-red-400 transition-colors">
+                <input 
+                  type="checkbox" 
+                  className="accent-red-500"
+                  checked={!!selectedMasking[type].right[f]}
+                  onChange={() => toggleSelection(type, 'right', f)}
+                />
+                {f}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/20">
+        <h4 className="font-bold text-blue-600 mb-2 text-sm">Left Ear</h4>
+        <div className="flex flex-wrap gap-2">
+          {FREQUENCIES.map(f => {
+            if (type === 'bc' && f === 8000) return null;
+            return (
+              <label key={f} className="flex items-center gap-1.5 bg-white px-2 py-1 rounded shadow-sm text-xs font-semibold cursor-pointer border hover:border-blue-400 transition-colors">
+                <input 
+                  type="checkbox" 
+                  className="accent-blue-500"
+                  checked={!!selectedMasking[type].left[f]}
+                  onChange={() => toggleSelection(type, 'left', f)}
+                />
+                {f}
+              </label>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -189,7 +183,7 @@ export default function MaskingQuiz({ patient, transducer, unmaskedAudiogram, on
               No, AC masking is not required
             </button>
           </div>
-          {needsMaskingOverall.ac === true && renderSelectionTable('ac')}
+          {needsMaskingOverall.ac === true && renderSelectionCheckboxes('ac')}
         </div>
 
         {/* BC Quiz */}
@@ -209,7 +203,7 @@ export default function MaskingQuiz({ patient, transducer, unmaskedAudiogram, on
               No, BC masking is not required
             </button>
           </div>
-          {needsMaskingOverall.bc === true && renderSelectionTable('bc')}
+          {needsMaskingOverall.bc === true && renderSelectionCheckboxes('bc')}
         </div>
       </div>
 
