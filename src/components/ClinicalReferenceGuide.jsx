@@ -85,7 +85,7 @@ export default function ClinicalReferenceGuide() {
             </div>
 
             <div className="text-xs text-muted-foreground pt-2">
-              <p><strong>Note:</strong> IA = Interaural Attenuation (Headphones: 40 dB, Inserts: 55 dB, Bone: 0 dB). The 10 dB added to initial masking levels provides a safety factor to ensure effective masking without overmasking.</p>
+              <p><strong>Note:</strong> IA = Interaural Attenuation (Headphones: 40 dB, Inserts: 55 dB, Bone: 0 dB). The safety factor added to initial masking levels (10 dB for pure tones, 5 dB for speech) ensures effective masking without overmasking.</p>
             </div>
           </div>
 
