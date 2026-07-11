@@ -9,6 +9,7 @@ export default function AudiometerControl({
   transducer,
   setTransducer,
   primaryTransducer,
+  setPrimaryTransducer,
   testMode,
   setTestMode,
   frequency,
@@ -25,7 +26,7 @@ export default function AudiometerControl({
   };
 
   const handleMaskingChange = (amount) => {
-    setMaskingLevel((prev) => Math.min(120, Math.max(-10, prev + amount)));
+    setMaskingLevel((prev) => Math.min(120, Math.max(0, prev + amount)));
   };
 
   return (
