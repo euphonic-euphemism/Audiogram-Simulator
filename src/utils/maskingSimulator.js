@@ -229,7 +229,16 @@ export function calculateUnmaskedAudiogram(patient, transducer = 'HEADPHONES') {
 export function getWrsPresentationLevel(data, ear) {
   const srt = data[ear].srt;
   const ac2000 = data[ear].ac[2000];
-  const bc2000 = data[ear].bc[2000] !== undefined ? data[ear].bc[2000] : ac2000;
+  
+  let bc2000 = ac2000;
+  if (data[ear].bc && data[ear].bc[2000] !== undefined) {
+    bc2000 = data[ear].bc[2000];
+  } else if (data.right && data.left && data.right.bc && data.left.bc) {
+    const otherEar = ear === 'right' ? 'left' : 'right';
+    if (data[otherEar].bc[2000] !== undefined) {
+      bc2000 = data[otherEar].bc[2000];
+    }
+  }
   
   // Normal or Conductive logic
   const isNormal = ac2000 <= 25;
