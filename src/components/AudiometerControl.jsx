@@ -156,14 +156,14 @@ export default function AudiometerControl({
           {testMode === 'WRS' ? 'Present Word List' : (testMode === 'SRT' ? 'Present Spondee' : 'Present Tone')}
         </button>
         
-        {testMode !== 'WRS' && (
-          <div className="flex flex-col gap-2 w-full">
-            <button 
-              className="w-full py-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 active:bg-teal-800 transition-colors shadow-sm"
-              onClick={() => onSaveThreshold(true, 'OK')}
-            >
-              Save Masked Threshold
-            </button>
+        <div className="flex flex-col gap-2 w-full">
+          <button 
+            className="w-full py-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 active:bg-teal-800 transition-colors shadow-sm"
+            onClick={() => onSaveThreshold(true, 'OK')}
+          >
+            Save Masked Threshold
+          </button>
+          {testMode !== 'WRS' && (
             <div className="flex gap-2">
               <button 
                 className="flex-1 py-2 bg-slate-200 text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-300 active:bg-slate-400 transition-colors"
@@ -178,8 +178,8 @@ export default function AudiometerControl({
                 Save Could Not Test
               </button>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
