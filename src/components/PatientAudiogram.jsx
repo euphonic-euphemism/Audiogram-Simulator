@@ -32,7 +32,7 @@ export default function PatientAudiogram({ patient, transducer, primaryTransduce
   const getWrsIml = (ear) => {
     if (!needsMasking.wrs[ear]) return 'Not Req';
     const nte = ear === 'right' ? 'left' : 'right';
-    const level = getWrsPresentationLevel(patient, ear);
+    const level = unmaskedAudiogram[ear].wrsLevel;
     return (level - ia + getLargestAbgSpeech(nte) + 5) + ' dB';
   };
 

@@ -36,8 +36,8 @@ export default function MaskingAnswerKey({ patient, transducer, primaryTransduce
   const imlSrtRight = unmaskedAudiogram.right.srt - ia + leftABG + 5;
   const imlSrtLeft = unmaskedAudiogram.left.srt - ia + rightABG + 5;
 
-  const imlWrsRight = getWrsPresentationLevel(patient, 'right') - ia + leftABG + 5;
-  const imlWrsLeft = getWrsPresentationLevel(patient, 'left') - ia + rightABG + 5;
+  const imlWrsRight = unmaskedAudiogram.right.wrsLevel - ia + leftABG + 5;
+  const imlWrsLeft = unmaskedAudiogram.left.wrsLevel - ia + rightABG + 5;
 
   return (
     <div className="p-6 bg-orange-500/10 border border-orange-500/30 rounded-xl space-y-3">
