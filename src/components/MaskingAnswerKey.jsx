@@ -1,15 +1,15 @@
 import React from 'react';
 import { FREQUENCIES, evaluateMaskingNeeds, evaluateSpeechMaskingNeeds, getWrsPresentationLevel } from '../utils/maskingSimulator';
 
-export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogram }) {
+export default function MaskingAnswerKey({ patient, transducer, primaryTransducer, unmaskedAudiogram }) {
   const maskingNeeds = evaluateMaskingNeeds(unmaskedAudiogram, transducer);
-  const speechMaskingNeeds = evaluateSpeechMaskingNeeds(patient, transducer, unmaskedAudiogram);
+  const speechMaskingNeeds = evaluateSpeechMaskingNeeds(patient, primaryTransducer, unmaskedAudiogram);
 
   const anyMaskingNeeded = 
     [...FREQUENCIES].some(f => maskingNeeds.ac.right[f] || maskingNeeds.bc.right[f] || maskingNeeds.ac.left[f] || maskingNeeds.bc.left[f]) ||
     speechMaskingNeeds.srt.right || speechMaskingNeeds.srt.left || speechMaskingNeeds.wrs.right || speechMaskingNeeds.wrs.left;
 
-  const ia = transducer === 'HEADPHONES' ? 40 : (transducer === 'INSERTS' ? 55 : 0);
+  const ia = primaryTransducer === 'HEADPHONES' ? 40 : (primaryTransducer === 'INSERTS' ? 55 : 0);
 
   const getLargestABG = (ear) => {
     let max = 0;
@@ -50,9 +50,9 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
           if (maskingNeeds.ac.right[f]) reqs.push(`Right AC (IML: ${unmaskedAudiogram.left.ac[f] + 10} dB EM)`);
           if (maskingNeeds.bc.right[f]) {
             let oe = 0;
-            if (transducer === 'HEADPHONES') {
+            if (primaryTransducer === 'HEADPHONES') {
               oe = f <= 500 ? 15 : (f === 1000 ? 10 : 0);
-            } else if (transducer === 'INSERTS') {
+            } else if (primaryTransducer === 'INSERTS') {
               oe = f <= 500 ? 10 : 0;
             }
             reqs.push(`Right BC (IML: ${unmaskedAudiogram.left.ac[f] + oe + 10} dB EM, includes ${oe}dB OE)`);
@@ -60,9 +60,9 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
           if (maskingNeeds.ac.left[f]) reqs.push(`Left AC (IML: ${unmaskedAudiogram.right.ac[f] + 10} dB EM)`);
           if (maskingNeeds.bc.left[f]) {
             let oe = 0;
-            if (transducer === 'HEADPHONES') {
+            if (primaryTransducer === 'HEADPHONES') {
               oe = f <= 500 ? 15 : (f === 1000 ? 10 : 0);
-            } else if (transducer === 'INSERTS') {
+            } else if (primaryTransducer === 'INSERTS') {
               oe = f <= 500 ? 10 : 0;
             }
             reqs.push(`Left BC (IML: ${unmaskedAudiogram.right.ac[f] + oe + 10} dB EM, includes ${oe}dB OE)`);

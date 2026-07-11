@@ -59,10 +59,14 @@ export default function StudentAudiogram({ thresholds }) {
         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
           <h4 className="font-bold text-red-500 text-sm">Right SRT</h4>
           <p className="font-semibold">{thresholds.right.srt ? `${thresholds.right.srt.level} dB HL (${thresholds.right.srt.isMasked ? 'Masked' : 'Unmasked'})` : '-'}</p>
+          <h4 className="font-bold text-red-500 text-sm mt-3">Right WRS</h4>
+          <p className="font-semibold">{thresholds.right.wrs ? `${thresholds.right.wrs.score}% @ ${thresholds.right.wrs.level} dB HL (${thresholds.right.wrs.isMasked ? 'Masked' : 'Unmasked'})` : '-'}</p>
         </div>
         <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-center">
           <h4 className="font-bold text-blue-500 text-sm">Left SRT</h4>
           <p className="font-semibold">{thresholds.left.srt ? `${thresholds.left.srt.level} dB HL (${thresholds.left.srt.isMasked ? 'Masked' : 'Unmasked'})` : '-'}</p>
+          <h4 className="font-bold text-blue-500 text-sm mt-3">Left WRS</h4>
+          <p className="font-semibold">{thresholds.left.wrs ? `${thresholds.left.wrs.score}% @ ${thresholds.left.wrs.level} dB HL (${thresholds.left.wrs.isMasked ? 'Masked' : 'Unmasked'})` : '-'}</p>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FREQUENCIES, getWrsPresentationLevel, evaluateSpeechMaskingNeeds } from '../utils/maskingSimulator';
 
-export default function PatientAudiogram({ patient, transducer, unmaskedAudiogram }) {
+export default function PatientAudiogram({ patient, transducer, primaryTransducer, unmaskedAudiogram }) {
   const [show, setShow] = useState(false);
 
   const getLargestAbgSpeech = (ear) => {
@@ -20,8 +20,8 @@ export default function PatientAudiogram({ patient, transducer, unmaskedAudiogra
     return maxAbg;
   };
 
-  const ia = transducer === 'INSERTS' ? 55 : (transducer === 'HEADPHONES' ? 40 : 0);
-  const needsMasking = evaluateSpeechMaskingNeeds(patient, transducer || 'HEADPHONES', unmaskedAudiogram);
+  const ia = primaryTransducer === 'INSERTS' ? 55 : (primaryTransducer === 'HEADPHONES' ? 40 : 0);
+  const needsMasking = evaluateSpeechMaskingNeeds(patient, primaryTransducer || 'HEADPHONES', unmaskedAudiogram);
 
   const getSrtIml = (ear) => {
     if (!needsMasking.srt[ear]) return 'Not Req';

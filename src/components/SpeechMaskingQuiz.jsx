@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { evaluateSpeechMaskingNeeds } from '../utils/maskingSimulator';
 
-export default function SpeechMaskingQuiz({ patient, transducer, unmaskedAudiogram, onQuizPassed }) {
+export default function SpeechMaskingQuiz({ patient, primaryTransducer, unmaskedAudiogram, onQuizPassed }) {
   const [needsMaskingOverall, setNeedsMaskingOverall] = useState({ srt: null, wrs: null });
   const [selectedMasking, setSelectedMasking] = useState({
     srt: { right: false, left: false },
@@ -9,7 +9,7 @@ export default function SpeechMaskingQuiz({ patient, transducer, unmaskedAudiogr
   });
   const [feedback, setFeedback] = useState(null);
 
-  const trueMaskingNeeds = evaluateSpeechMaskingNeeds(patient, transducer, unmaskedAudiogram);
+  const trueMaskingNeeds = evaluateSpeechMaskingNeeds(patient, primaryTransducer, unmaskedAudiogram);
   
   const hasAnyMaskingNeedSrt = trueMaskingNeeds.srt.right || trueMaskingNeeds.srt.left;
   const hasAnyMaskingNeedWrs = trueMaskingNeeds.wrs.right || trueMaskingNeeds.wrs.left;
@@ -22,7 +22,7 @@ export default function SpeechMaskingQuiz({ patient, transducer, unmaskedAudiogr
       wrs: { right: false, left: false }
     });
     setFeedback(null);
-  }, [patient, transducer]);
+  }, [patient, primaryTransducer]);
 
   const toggleSelection = (type, ear) => {
     setSelectedMasking(prev => ({
