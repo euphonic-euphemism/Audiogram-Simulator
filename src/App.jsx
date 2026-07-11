@@ -43,8 +43,8 @@ function App() {
 
   // Student saved thresholds
   const emptyStudentThresholds = () => ({
-    right: { ac: {}, bc: {}, srt: null },
-    left: { ac: {}, bc: {}, srt: null }
+    right: { ac: {}, bc: {}, srt: null, wrs: null },
+    left: { ac: {}, bc: {}, srt: null, wrs: null }
   });
   const [studentThresholds, setStudentThresholds] = useState(emptyStudentThresholds());
 
@@ -94,21 +94,44 @@ function App() {
     });
   };
 
+  const handleSpeechQuizPassed = () => {
+    setSpeechQuizPassed(true);
+
+    const speechMaskingNeeds = evaluateSpeechMaskingNeeds(patient, primaryTransducer, unmaskedAudiogram);
+    setStudentThresholds(prev => {
+      const next = { ...prev };
+      ['right', 'left'].forEach(ear => {
+        next[ear] = { ...next[ear] };
+        
+        if (!speechMaskingNeeds.srt[ear]) {
+          next[ear].srt = { level: unmaskedAudiogram[ear].srt, isMasked: false, status: 'OK' };
+        }
+        
+        if (!speechMaskingNeeds.wrs[ear]) {
+          next[ear].wrs = { score: patient[ear].maxWrs, level: unmaskedAudiogram[ear].wrsLevel, isMasked: false, status: 'OK' };
+        }
+      });
+      return next;
+    });
+  };
+
   const handleSaveThreshold = (isMasked = false, status = 'OK') => {
-    if (testMode === 'WRS') return;
-    
+    if (testMode === 'WRS' && responseValue === null) return;
+
     setStudentThresholds(prev => {
       const next = { ...prev };
       // Deep copy the ear we are changing
       const earKey = testEar;
       next[earKey] = { ...next[earKey] };
-      
+
       if (testMode === 'TONE') {
         const typeKey = transducer === 'BONE' ? 'bc' : 'ac';
         next[earKey][typeKey] = { ...next[earKey][typeKey] };
         next[earKey][typeKey][frequency] = { level: toneLevel, isMasked, status };
       } else if (testMode === 'SRT') {
         next[earKey].srt = { level: toneLevel, isMasked, status };
+      } else if (testMode === 'WRS') {
+        next[earKey].wrs = { score: responseValue, level: toneLevel, isMasked, status };
       }
       return next;
     });
@@ -262,9 +285,9 @@ function App() {
               <div className="w-full xl:w-[320px] shrink-0">
                 <SpeechMaskingQuiz
                   patient={patient}
-                  transducer={transducer}
+                  primaryTransducer={primaryTransducer}
                   unmaskedAudiogram={unmaskedAudiogram}
-                  onQuizPassed={() => setSpeechQuizPassed(true)}
+                  onQuizPassed={handleSpeechQuizPassed}
                 />
               </div>
             )}
@@ -340,12 +363,13 @@ function App() {
                 onClear={clearHistory}
               />
               
-              <PatientAudiogram patient={patient} transducer={transducer} unmaskedAudiogram={unmaskedAudiogram} />
+              <PatientAudiogram patient={patient} transducer={transducer} primaryTransducer={primaryTransducer} unmaskedAudiogram={unmaskedAudiogram} />
               
               {(toneQuizPassed && speechQuizPassed) && (
                 <MaskingAnswerKey 
                   patient={patient} 
                   transducer={transducer} 
+                  primaryTransducer={primaryTransducer}
                   unmaskedAudiogram={unmaskedAudiogram} 
                 />
               )}
