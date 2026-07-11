@@ -336,8 +336,8 @@ export function checkWrsResponse({
     if (sensationLevel <= 0) return 0;
     
     // Performance-Intensity (PI-PB) curve parameters
-    const k = 0.15; // Steepness
-    const x0 = 15;  // Midpoint (50% of maxWrs) in dB SL
+    const k = 0.3;  // Steeper curve
+    const x0 = 5;   // Midpoint (50% of maxWrs) at 5 dB SL
     
     const score = maxWrs / (1 + Math.exp(-k * (sensationLevel - x0)));
     return Math.round(score);
