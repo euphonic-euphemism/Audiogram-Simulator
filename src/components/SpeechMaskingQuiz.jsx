@@ -122,8 +122,8 @@ export default function SpeechMaskingQuiz({ patient, primaryTransducer, unmasked
         </p>
         <div className="mt-3 p-3 bg-orange-500/10 rounded-lg inline-block border border-orange-500/20">
           <p className="text-sm font-semibold text-orange-800 m-0">
-            Current Transducer: <span className="font-bold">{transducer === 'INSERTS' ? 'Insert Earphones' : 'Headphones'}</span><br/>
-            Minimum IA: <span className="font-bold">{transducer === 'INSERTS' ? '55 dB' : '40 dB'}</span>
+            Current Transducer: <span className="font-bold">{primaryTransducer === 'INSERTS' ? 'Insert Earphones' : 'Headphones'}</span><br/>
+            Minimum IA: <span className="font-bold">{primaryTransducer === 'INSERTS' ? '55 dB' : '40 dB'}</span>
           </p>
         </div>
       </div>
@@ -131,7 +131,7 @@ export default function SpeechMaskingQuiz({ patient, primaryTransducer, unmasked
       <div className="space-y-4">
         {/* SRT Quiz */}
         <div className="space-y-4">
-          <p className="font-semibold text-sm">1. Using the {transducer} rules, do you need to mask for <span className="text-primary font-bold">SRT</span>?</p>
+          <p className="font-semibold text-sm">1. Using the {primaryTransducer} rules, do you need to mask for <span className="text-primary font-bold">SRT</span>?</p>
           <div className="flex gap-4">
             <button 
               onClick={() => setOverall('srt', true)}
