@@ -62,6 +62,7 @@ export default function ClinicalReferenceGuide() {
               <ul className="text-sm space-y-1 bg-secondary/20 p-3 rounded-lg">
                 <li><span className="font-medium">When to mask:</span> TE AC - NTE BC ≥ IA</li>
                 <li><span className="font-medium">Initial Masking Level:</span> NTE AC + 10 dB</li>
+                <li><span className="font-medium">Maximum Masking Level:</span> TE Masked BC + IA - 5 dB</li>
               </ul>
             </div>
 
@@ -70,6 +71,7 @@ export default function ClinicalReferenceGuide() {
               <ul className="text-sm space-y-1 bg-secondary/20 p-3 rounded-lg">
                 <li><span className="font-medium">When to mask:</span> TE ABG {'>'} 10 dB (or ≥ 15 dB)</li>
                 <li><span className="font-medium">Initial Masking Level:</span> NTE AC + 10 dB + OE</li>
+                <li><span className="font-medium">Maximum Masking Level:</span> TE Masked BC + IA - 5 dB</li>
               </ul>
             </div>
 
@@ -77,7 +79,8 @@ export default function ClinicalReferenceGuide() {
               <h4 className="font-semibold text-primary">Speech Testing (SRT / WRS)</h4>
               <ul className="text-sm space-y-1 bg-secondary/20 p-3 rounded-lg">
                 <li><span className="font-medium">When to mask:</span> TE Level - NTE Best BC ≥ IA</li>
-                <li><span className="font-medium">Initial Masking Level:</span> TE Level - IA + NTE Largest ABG</li>
+                <li><span className="font-medium">Initial Masking Level:</span> TE Level - IA + NTE Largest ABG (500-2000 Hz) + 5 dB safety factor</li>
+                <li><span className="font-medium">Maximum Masking Level:</span> TE Masked BC + IA - 5 dB</li>
               </ul>
             </div>
 
