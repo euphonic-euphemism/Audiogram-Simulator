@@ -116,7 +116,23 @@ function App() {
   };
 
   const handleSaveThreshold = (isMasked = false, status = 'OK') => {
-    if (testMode === 'WRS' && responseValue === null) return;
+    let finalScore = responseValue;
+    if (testMode === 'WRS') {
+      const isRight = testEar === 'right';
+      const teSrt = isRight ? patient.right.srt : patient.left.srt;
+      const teMaxWrs = isRight ? patient.right.maxWrs : patient.left.maxWrs;
+      const nteSrt = isRight ? patient.left.srt : patient.right.srt;
+      const toneIA = getIA(transducer, patient, testMode, frequency);
+      const maskerIA = getIA(primaryTransducer, patient, testMode, frequency);
+
+      finalScore = checkWrsResponse({
+        teSrt, teMaxWrs, nteSrt, nteBestBc: nteSrt,
+        tePresentationLevel: toneLevel, nteMaskingLevel: maskingLevel,
+        toneIA, maskerIA, teBestBc: teSrt
+      });
+    }
+
+    if (testMode === 'WRS' && finalScore === null) return;
 
     setStudentThresholds(prev => {
       const next = { ...prev };
@@ -131,7 +147,7 @@ function App() {
       } else if (testMode === 'SRT') {
         next[earKey].srt = { level: toneLevel, isMasked, status };
       } else if (testMode === 'WRS') {
-        next[earKey].wrs = { score: responseValue, level: toneLevel, isMasked, status };
+        next[earKey].wrs = { score: finalScore, level: toneLevel, isMasked, status };
       }
       return next;
     });
@@ -235,7 +251,9 @@ function App() {
       });
     } else {
       setHasResponded(false);
-      setResponseValue(null);
+      if (testMode !== 'WRS') {
+        setResponseValue(null);
+      }
     }
   }, [isPresenting, toneLevel, maskingLevel, transducer, testEar, testMode, frequency, patient]);
 
