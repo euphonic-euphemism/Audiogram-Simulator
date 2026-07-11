@@ -244,7 +244,7 @@ function App() {
           {/* Top Row: Quizzes and Unmasked Audiogram */}
           <div className="flex flex-col xl:flex-row gap-6 items-start">
             {!toneQuizPassed && (
-              <div className="w-full xl:w-[320px] shrink-0">
+              <div className="w-full xl:w-[380px] shrink-0">
                 <MaskingQuiz
                   patient={patient}
                   transducer={transducer}
@@ -340,7 +340,7 @@ function App() {
                 onClear={clearHistory}
               />
               
-              <PatientAudiogram patient={patient} transducer={transducer} />
+              <PatientAudiogram patient={patient} transducer={transducer} unmaskedAudiogram={unmaskedAudiogram} />
               
               {(toneQuizPassed && speechQuizPassed) && (
                 <MaskingAnswerKey 
