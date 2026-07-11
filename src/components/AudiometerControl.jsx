@@ -156,7 +156,7 @@ export default function AudiometerControl({
           {testMode === 'WRS' ? 'Present Word List' : (testMode === 'SRT' ? 'Present Spondee' : 'Present Tone')}
         </button>
         
-        {testMode === 'TONE' && (
+        {testMode !== 'WRS' && (
           <div className="flex flex-col gap-2 w-full">
             <button 
               className="w-full py-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 active:bg-teal-800 transition-colors shadow-sm"
