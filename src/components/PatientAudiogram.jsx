@@ -1,36 +1,39 @@
 import React, { useState } from 'react';
 import { FREQUENCIES, getWrsPresentationLevel, evaluateSpeechMaskingNeeds } from '../utils/maskingSimulator';
 
-export default function PatientAudiogram({ patient, transducer }) {
+export default function PatientAudiogram({ patient, transducer, unmaskedAudiogram }) {
   const [show, setShow] = useState(false);
 
   const getLargestAbgSpeech = (ear) => {
-    const freqs = [500, 1000, 2000];
     let maxAbg = 0;
-    freqs.forEach(f => {
-      const ac = patient[ear].ac[f];
-      const bc = patient[ear].bc[f];
-      if (ac !== undefined && bc !== undefined) {
-        maxAbg = Math.max(maxAbg, ac - bc);
+    [500, 1000, 2000].forEach(f => {
+      const ac = unmaskedAudiogram[ear].ac[f];
+      const rightBc = unmaskedAudiogram.right.bc[f] !== undefined ? unmaskedAudiogram.right.bc[f] : Infinity;
+      const leftBc = unmaskedAudiogram.left.bc[f] !== undefined ? unmaskedAudiogram.left.bc[f] : Infinity;
+      let bestBc = Math.min(rightBc, leftBc);
+      if (bestBc === Infinity) bestBc = ac;
+
+      if (ac !== undefined) {
+        maxAbg = Math.max(maxAbg, ac - bestBc);
       }
     });
     return maxAbg;
   };
 
   const ia = transducer === 'INSERTS' ? 55 : (transducer === 'HEADPHONES' ? 40 : 0);
-  const needsMasking = evaluateSpeechMaskingNeeds(patient, transducer || 'HEADPHONES');
+  const needsMasking = evaluateSpeechMaskingNeeds(patient, transducer || 'HEADPHONES', unmaskedAudiogram);
 
   const getSrtIml = (ear) => {
     if (!needsMasking.srt[ear]) return 'Not Req';
     const nte = ear === 'right' ? 'left' : 'right';
-    return (patient[ear].srt - ia + getLargestAbgSpeech(nte)) + ' dB';
+    return (unmaskedAudiogram[ear].srt - ia + getLargestAbgSpeech(nte) + 5) + ' dB';
   };
 
   const getWrsIml = (ear) => {
     if (!needsMasking.wrs[ear]) return 'Not Req';
     const nte = ear === 'right' ? 'left' : 'right';
     const level = getWrsPresentationLevel(patient, ear);
-    return (level - ia + getLargestAbgSpeech(nte)) + ' dB';
+    return (level - ia + getLargestAbgSpeech(nte) + 5) + ' dB';
   };
 
   return (
