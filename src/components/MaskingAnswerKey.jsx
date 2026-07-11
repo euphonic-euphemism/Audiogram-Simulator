@@ -13,7 +13,7 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
 
   const getLargestABG = (ear) => {
     let max = 0;
-    [500, 1000, 2000, 4000].forEach(f => {
+    [500, 1000, 2000].forEach(f => {
       const ac = unmaskedAudiogram[ear].ac[f];
       const rightBc = unmaskedAudiogram.right.bc[f] !== undefined ? unmaskedAudiogram.right.bc[f] : Infinity;
       const leftBc = unmaskedAudiogram.left.bc[f] !== undefined ? unmaskedAudiogram.left.bc[f] : Infinity;
@@ -33,11 +33,11 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
   const rightABG = getLargestABG('right');
   const leftABG = getLargestABG('left');
 
-  const imlSrtRight = unmaskedAudiogram.right.srt - ia + leftABG;
-  const imlSrtLeft = unmaskedAudiogram.left.srt - ia + rightABG;
+  const imlSrtRight = unmaskedAudiogram.right.srt - ia + leftABG + 5;
+  const imlSrtLeft = unmaskedAudiogram.left.srt - ia + rightABG + 5;
 
-  const imlWrsRight = getWrsPresentationLevel(patient, 'right') - ia + leftABG;
-  const imlWrsLeft = getWrsPresentationLevel(patient, 'left') - ia + rightABG;
+  const imlWrsRight = getWrsPresentationLevel(patient, 'right') - ia + leftABG + 5;
+  const imlWrsLeft = getWrsPresentationLevel(patient, 'left') - ia + rightABG + 5;
 
   return (
     <div className="p-6 bg-orange-500/10 border border-orange-500/30 rounded-xl space-y-3">
