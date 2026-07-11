@@ -109,7 +109,7 @@ export default function AudiometerControl({
         <div className="bg-orange-500/10 border border-orange-500/30 p-4 rounded-lg mt-2 space-y-2">
           <h4 className="font-bold text-orange-600 text-sm">Speech Masking Formula (Initial Masking Level)</h4>
           <p className="text-sm font-semibold text-foreground">
-            IML = TE Presentation Level - IA + NTE Largest ABG
+            IML = TE Presentation Level - IA + NTE Largest ABG + 5 dB
           </p>
           <p className="text-xs font-semibold text-orange-700 italic border-l-2 border-orange-500 pl-2 py-1 mt-1">
             Clinical Tip: If you perform speech testing before masked bone conduction, use the largest unmasked ABG of the NTE. If you have already obtained the masked BC thresholds, use the true ABG to lower the risk of overmasking!
@@ -118,6 +118,7 @@ export default function AudiometerControl({
             <li><strong>TE Presentation Level:</strong> The dB HL of the speech being presented to the test ear (For SRT, this is your evaluated SRT value; for WRS, it's the fixed presentation level).</li>
             <li><strong>IA:</strong> Interaural Attenuation (40 dB for Headphones, 55 dB for Inserts).</li>
             <li><strong>NTE Largest ABG:</strong> The largest Air-Bone Gap in the non-test ear from the speech frequencies (500, 1000, and 2000 Hz).</li>
+            <li><strong>+ 5 dB:</strong> The safety factor added to ensure the masking level is sufficient to cover the test signal in the non-test ear.</li>
           </ul>
         </div>
       )}
