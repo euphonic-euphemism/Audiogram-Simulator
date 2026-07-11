@@ -76,8 +76,8 @@ export default function MaskingAnswerKey({ patient, transducer, unmaskedAudiogra
         
         {speechMaskingNeeds.srt.right && <li><strong>SRT:</strong> Right Ear (Initial Masking Level: {Math.max(-10, imlSrtRight)} dB EM)</li>}
         {speechMaskingNeeds.srt.left && <li><strong>SRT:</strong> Left Ear (Initial Masking Level: {Math.max(-10, imlSrtLeft)} dB EM)</li>}
-        {speechMaskingNeeds.wrs.right && <li><strong>WRS:</strong> Right Ear (Initial Masking Level: {Math.max(-10, unmaskedAudiogram.right.wrsLevel - ia + leftABG)} dB EM)</li>}
-        {speechMaskingNeeds.wrs.left && <li><strong>WRS:</strong> Left Ear (Initial Masking Level: {Math.max(-10, unmaskedAudiogram.left.wrsLevel - ia + rightABG)} dB EM)</li>}
+        {speechMaskingNeeds.wrs.right && <li><strong>WRS:</strong> Right Ear (Initial Masking Level: {Math.max(-10, imlWrsRight)} dB EM)</li>}
+        {speechMaskingNeeds.wrs.left && <li><strong>WRS:</strong> Left Ear (Initial Masking Level: {Math.max(-10, imlWrsLeft)} dB EM)</li>}
         
         {!anyMaskingNeeded && (
           <li>No masking required for any test.</li>
