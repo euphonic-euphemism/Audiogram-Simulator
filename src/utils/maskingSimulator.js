@@ -463,35 +463,40 @@ export function evaluateSpeechMaskingNeeds(patient, transducer = 'HEADPHONES', u
     unmasked = calculateUnmaskedAudiogram(patient, transducer);
   }
 
-  // Find best unmasked BC in specific speech frequencies for the given ear
-  const getBestUnmaskedBc = (ear, freqs) => {
+  // Find best unmasked BC across BOTH ears, since unmasked BC is only plotted on one ear
+  const getGlobalBestUnmaskedBc = (freqs) => {
     let best = 120;
     freqs.forEach(f => {
-      if (unmasked[ear].bc[f] !== undefined && unmasked[ear].bc[f] < best) {
-        best = unmasked[ear].bc[f];
-      }
+      const rightBc = unmasked.right.bc[f];
+      const leftBc = unmasked.left.bc[f];
+      if (rightBc !== undefined && rightBc < best) best = rightBc;
+      if (leftBc !== undefined && leftBc < best) best = leftBc;
     });
-    // Fallback to unmasked SRT or AC if BC is somehow missing entirely, though rare
-    return best < 120 ? best : unmasked[ear].srt;
+    return best;
   };
   
-  const rightBestBcSrt = getBestUnmaskedBc('right', [500, 1000, 2000]);
-  const leftBestBcSrt = getBestUnmaskedBc('left', [500, 1000, 2000]);
+  const bestBcSrt = getGlobalBestUnmaskedBc([500, 1000, 2000]);
+  const bestBcWrs = getGlobalBestUnmaskedBc([250, 500, 1000, 2000, 4000]);
 
-  const rightBestBcWrs = getBestUnmaskedBc('right', [250, 500, 1000, 2000, 4000]);
-  const leftBestBcWrs = getBestUnmaskedBc('left', [250, 500, 1000, 2000, 4000]);
+  // If no BC was recorded at all, fallback to the NTE's SRT
+  const rightEffectiveBcSrt = bestBcSrt < 120 ? bestBcSrt : unmasked.right.srt;
+  const leftEffectiveBcSrt = bestBcSrt < 120 ? bestBcSrt : unmasked.left.srt;
+
+  const rightEffectiveBcWrs = bestBcWrs < 120 ? bestBcWrs : unmasked.right.srt;
+  const leftEffectiveBcWrs = bestBcWrs < 120 ? bestBcWrs : unmasked.left.srt;
 
   // SRT Masking: Compare against both NTE Unmasked SRT and NTE Unmasked Best BC (at 500, 1000, 2000 Hz)
-  needsMasking.srt.right = (unmasked.right.srt - leftBestBcSrt) >= iaThreshold || (unmasked.right.srt - unmasked.left.srt) >= iaThreshold;
-  needsMasking.srt.left = (unmasked.left.srt - rightBestBcSrt) >= iaThreshold || (unmasked.left.srt - unmasked.right.srt) >= iaThreshold;
+  // For TE Right, NTE is Left. So we use leftEffectiveBcSrt as the NTE BC.
+  needsMasking.srt.right = (unmasked.right.srt - leftEffectiveBcSrt) >= iaThreshold || (unmasked.right.srt - unmasked.left.srt) >= iaThreshold;
+  needsMasking.srt.left = (unmasked.left.srt - rightEffectiveBcSrt) >= iaThreshold || (unmasked.left.srt - unmasked.right.srt) >= iaThreshold;
 
   // WRS Masking
   // WRS is evaluated against the NTE Unmasked Best BC and NTE Unmasked SRT
   const rightWrsLevel = unmasked.right.wrsLevel;
   const leftWrsLevel = unmasked.left.wrsLevel;
 
-  needsMasking.wrs.right = (rightWrsLevel - leftBestBcWrs) >= iaThreshold || (rightWrsLevel - unmasked.left.srt) >= iaThreshold;
-  needsMasking.wrs.left = (leftWrsLevel - rightBestBcWrs) >= iaThreshold || (leftWrsLevel - unmasked.right.srt) >= iaThreshold;
+  needsMasking.wrs.right = (rightWrsLevel - leftEffectiveBcWrs) >= iaThreshold || (rightWrsLevel - unmasked.left.srt) >= iaThreshold;
+  needsMasking.wrs.left = (leftWrsLevel - rightEffectiveBcWrs) >= iaThreshold || (leftWrsLevel - unmasked.right.srt) >= iaThreshold;
 
   return needsMasking;
 }
