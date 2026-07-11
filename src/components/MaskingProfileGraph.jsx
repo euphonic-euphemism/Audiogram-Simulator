@@ -86,7 +86,7 @@ export default function MaskingProfileGraph({ history, frequency, testEar, trans
         ia = 40; // Fallback
       }
 
-      const overmaskingThreshold = teBestBc + ia;
+      const overmaskingThreshold = teBestBc + ia - 5;
       const currentMaskingLevel = rawPoints[rawPoints.length - 1].ml;
 
       if (currentMaskingLevel >= overmaskingThreshold) {
